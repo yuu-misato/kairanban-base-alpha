@@ -651,7 +651,7 @@ export const sendLineBroadcast = async (message: string, targetRole: string = 'a
   });
   return { data, error };
 };
-export const getAdminData = async (type: 'users' | 'missions' | 'communities') => {
+export const getAdminData = async (type: 'users' | 'missions' | 'communities' | 'points') => {
   const { data, error } = await supabase.functions.invoke(`admin-data?type=${type}`, {
     method: 'GET'
   });
