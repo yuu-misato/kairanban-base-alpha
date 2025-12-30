@@ -187,13 +187,13 @@ export const useDashboardData = (user: User | null, selectedAreas: string[], add
     const refreshReads = async () => {
         if (!user) return;
         const { data } = await getMyReadStatus(user.id);
-        if (data) setMyReads(data);
+        if (data) setMyReads(data as any[]);
     };
 
     const refreshCommunities = useCallback(async () => {
         if (!user) return;
         const { data } = await getMyCommunities(user.id);
-        if (data) setMyCommunities(data);
+        if (data) setMyCommunities(data as any[]);
     }, [user]);
 
     // Initial Communities Load
