@@ -7,10 +7,6 @@ const SystemDiagnostics: React.FC = () => {
     const [status, setStatus] = useState<'running' | 'done'>('running');
     const [isOpen, setIsOpen] = useState(true);
 
-    useEffect(() => {
-        runDiagnostics();
-    }, []);
-
     const runDiagnostics = async () => {
         setStatus('running');
         const res: any = {};
@@ -18,7 +14,7 @@ const SystemDiagnostics: React.FC = () => {
         // 1. Environment Variables Check
         res.env = {
             url: process.env.NEXT_PUBLIC_SUPABASE_URL ? 'OK' : 'MISSING',
-            urlValue: process.env.NEXT_PUBLIC_SUPABASE_URL, // Show partially? No, full for debug
+            urlValue: process.env.NEXT_PUBLIC_SUPABASE_URL,
             key: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'OK' : 'MISSING',
             keyLen: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.length || 0,
         };
@@ -40,7 +36,7 @@ const SystemDiagnostics: React.FC = () => {
         try {
             // Just try to read one profile to check connection
             const { data, error, status } = await supabase
-                .from('profiles')
+                .from('profiles' as any)
                 .select('id')
                 .limit(1);
 
@@ -54,11 +50,13 @@ const SystemDiagnostics: React.FC = () => {
             res.dbRead = { ok: false, error: e.message };
         }
 
-        // 4. Storage / Write Check? (Skip for now to avoid side effects, focus on connection)
-
         setResults(res);
         setStatus('done');
     };
+
+    useEffect(() => {
+        runDiagnostics();
+    }, []);
 
     if (!isOpen) {
         return (
