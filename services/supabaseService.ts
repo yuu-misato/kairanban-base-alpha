@@ -27,17 +27,32 @@ export const createProfile = async (user: any) => {
 
   console.log('Upserting Profile Payload:', payload);
 
-  const { data, error } = await supabase
-    .from('profiles' as any)
-    .upsert(payload, { onConflict: 'id' })
-    .select();
+  try {
+    // 5秒タイムアウトを設定
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Connection timed out. Check Supabase settings.')), 5000)
+    );
 
-  if (error) {
-    console.error('FAILED TO SAVE PROFILE TO DB (RLS or Constraint Error):', error);
-  } else {
-    console.log('Profile saved successfully:', data);
+    const dbPromise = supabase
+      .from('profiles' as any)
+      .upsert(payload, { onConflict: 'id' })
+      .select();
+
+    const result: any = await Promise.race([dbPromise, timeoutPromise]);
+    const { data, error } = result;
+
+    if (error) {
+      console.error('FAILED TO SAVE PROFILE TO DB (RLS or Constraint Error):', error);
+    } else {
+      console.log('Profile saved successfully:', data);
+    }
+    return { data, error };
+
+  } catch (err: any) {
+    console.error('CRITICAL: Profile save failed or timed out:', err);
+    // UIにエラーを返すためにダミーのエラーオブジェクトを返す
+    return { data: null, error: { message: err.message || 'Connection Timed Out' } };
   }
-  return { data, error };
 };
 
 export const createCommunity = async (community: any) => {
