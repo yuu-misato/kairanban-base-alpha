@@ -467,7 +467,7 @@ function DashboardContent() {
 
     // Check if we need to show registration modal (e.g. if name is '名無し')
     // Logic for tempUser is handled by checking user data
-    if (user.nickname === '名無し' || isEditingProfile) {
+    if (user.nickname === '名無し' || !user.selectedAreas || user.selectedAreas.length === 0 || isEditingProfile) {
         return (
             <RegistrationModal
                 initialNickname={user.nickname === '名無し' ? '' : user.nickname}
