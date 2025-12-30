@@ -139,7 +139,8 @@ const SystemDiagnostics: React.FC = () => {
                                 </>
                             ) : (
                                 <>
-                                    <p className="text-red-600 font-bold mb-1">接続失敗: {results.dbRead?.error}</p>
+                                    <p className="text-red-600 font-bold mb-1">接続失敗: {results.dbRead?.error || 'Unknown Error'}</p>
+                                    <p className="text-xs text-slate-400 break-all">{JSON.stringify(results.dbRead)}</p>
                                     <p className="text-slate-500">
                                         考えられる原因:<br />
                                         ・環境変数のURLが間違っている<br />

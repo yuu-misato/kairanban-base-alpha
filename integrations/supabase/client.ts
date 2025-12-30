@@ -2,12 +2,14 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://kypnapwqarggnamgeeza.supabase.co';
-const SUPABASE_PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5cG5hcHdxYXJnZ25hbWdlZXphIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcwMTUyNjQsImV4cCI6MjA4MjU5MTI2NH0.MrFwusYFroZoXcy-9BnkKbqeKRJEMPOlcmlSte_OXDc';
+// Hardcoded settings to bypass Amplify environment variable issues
+const SUPABASE_URL = 'https://kypnapwqarggnamgeeza.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5cG5hcHdxYXJnZ25hbWdlZXphIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcwMTUyNjQsImV4cCI6MjA4MjU5MTI2NH0.MrFwusYFroZoXcy-9BnkKbqeKRJEMPOlcmlSte_OXDc';
 
-if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
-  console.error('CRITICAL: Supabase Environment Variables missing! Check your deployment configuration.');
-}
+// Debug log to confirm which key is being used (will appear in browser console)
+console.log('--- SUPABASE CLIENT INIT ---');
+console.log('URL:', SUPABASE_URL);
+console.log('Key Length:', SUPABASE_PUBLISHABLE_KEY.length);
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
