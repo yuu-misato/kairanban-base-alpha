@@ -1,3 +1,6 @@
+import { createClient } from '@supabase/supabase-js';
+import type { Database } from './types';
+
 // ------------------------------------------------------------------
 // SUPABASE CLIENT INITIALIZATION (HARDCODED FOR STABILITY)
 // ------------------------------------------------------------------
