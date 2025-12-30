@@ -31,6 +31,8 @@ export const useAdminData = () => {
                     selectedAreas: u.selected_areas || [],
                     isVerified: u.is_verified || false,
                     score: u.score || 0,
+                    level: u.level || 1, // Default level
+                    isLineConnected: !!u.line_user_id, // Assume connected if line ID exists
                     plan_type: u.plan_type,
                     current_usage: u.current_usage
                 })));
