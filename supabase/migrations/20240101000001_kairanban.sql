@@ -170,31 +170,31 @@ end;
 $$;
 
 -- RLS Policies (Simplified for development)
-alter table profiles enable row level security;
-create policy "Public read profiles" on profiles for select using (true);
-create policy "User update own profile" on profiles for update using (auth.uid() = id);
-create policy "User insert own profile" on profiles for insert with check (auth.uid() = id);
+-- alter table profiles enable row level security;
+-- create policy "Public read profiles" on profiles for select using (true);
+-- create policy "User update own profile" on profiles for update using (auth.uid() = id);
+-- create policy "User insert own profile" on profiles for insert with check (auth.uid() = id);
 
-alter table posts enable row level security;
-create policy "Public read posts" on posts for select using (true);
-create policy "Auth create posts" on posts for insert with check (auth.role() = 'authenticated');
-create policy "User update own posts" on posts for update using (auth.uid() = author_id);
+-- alter table posts enable row level security;
+-- create policy "Public read posts" on posts for select using (true);
+-- create policy "Auth create posts" on posts for insert with check (auth.role() = 'authenticated');
+-- create policy "User update own posts" on posts for update using (auth.uid() = author_id);
 
-alter table kairanbans enable row level security;
-create policy "Public read kairanbans" on kairanbans for select using (true);
-create policy "Auth create kairanbans" on kairanbans for insert with check (auth.role() = 'authenticated');
+-- alter table kairanbans enable row level security;
+-- create policy "Public read kairanbans" on kairanbans for select using (true);
+-- create policy "Auth create kairanbans" on kairanbans for insert with check (auth.role() = 'authenticated');
 
-alter table communities enable row level security;
-create policy "Public read communities" on communities for select using (true);
-create policy "Auth create communities" on communities for insert with check (auth.role() = 'authenticated');
+-- alter table communities enable row level security;
+-- create policy "Public read communities" on communities for select using (true);
+-- create policy "Auth create communities" on communities for insert with check (auth.role() = 'authenticated');
 
-alter table coupons enable row level security;
-create policy "Public read coupons" on coupons for select using (true);
-create policy "Auth create coupons" on coupons for insert with check (auth.role() = 'authenticated');
+-- alter table coupons enable row level security;
+-- create policy "Public read coupons" on coupons for select using (true);
+-- create policy "Auth create coupons" on coupons for insert with check (auth.role() = 'authenticated');
 
-alter table volunteer_missions enable row level security;
-create policy "Public read missions" on volunteer_missions for select using (true);
-create policy "Auth create missions" on volunteer_missions for insert with check (auth.role() = 'authenticated');
+-- alter table volunteer_missions enable row level security;
+-- create policy "Public read missions" on volunteer_missions for select using (true);
+-- create policy "Auth create missions" on volunteer_missions for insert with check (auth.role() = 'authenticated');
 
 -- Grant permissions (if needed for anon access in dev)
 grant usage on schema public to anon, authenticated;

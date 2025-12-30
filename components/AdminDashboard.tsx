@@ -683,9 +683,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onAddToast }) => {
                                     </div>
                                 </div>
                             </div>
-                        )}
-                </div>
+                        </div>
+            )}
         </div>
+        </div >
     );
 };
 
