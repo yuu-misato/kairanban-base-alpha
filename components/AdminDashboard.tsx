@@ -683,12 +683,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onAddToast }) => {
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                </div >
-            )}
-        </div >
-    );
+                        )}
+                </div>
+            );
 };
 
-export default AdminDashboard;
+            export default AdminDashboard;
