@@ -39,11 +39,11 @@ export const useAdminData = () => {
             } else if (tab === 'missions') {
                 const { data, error } = await getMissions();
                 if (error) throw error;
-                setMissions(data || []);
+                setMissions((data || []) as any[]);
             } else if (tab === 'communities') {
                 const { data, error } = await getAllCommunities();
                 if (error) throw error;
-                setCommunities(data || []);
+                setCommunities((data || []) as any[]);
             }
             // Support and Logs omitted for brevity in this refactor step, can add later
         } catch (err: any) {
