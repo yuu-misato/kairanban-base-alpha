@@ -417,15 +417,16 @@ export default function DashboardPage() {
         const missionPayload = { ...newMission, area: selectedAreas[0] };
         const { data, error } = await createMission(missionPayload);
         if (!error && data) {
+            const raw = data[0] as any;
             const created: VolunteerMission = {
-                id: data[0].id,
-                title: data[0].title,
-                description: data[0].description,
-                points: data[0].points,
-                area: data[0].area,
-                date: data[0].date,
+                id: raw.id,
+                title: raw.title,
+                description: raw.description,
+                points: raw.points,
+                area: raw.area,
+                date: raw.date,
                 currentParticipants: 0,
-                maxParticipants: data[0].max_participants
+                maxParticipants: raw.max_participants
             };
             setMissions([created, ...missions]);
             setIsCreatingMission(false);
