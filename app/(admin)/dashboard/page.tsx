@@ -73,7 +73,7 @@ function DashboardContent() {
     const [myCommunities, setMyCommunities] = useState<Community[]>([]);
     const [selectedCommunity, setSelectedCommunity] = useState<Community | null>(null);
     const [score, setScore] = useState(150);
-    const [selectedAreas, setSelectedAreas] = useState<string[]>(['さいたま市大宮区']); // Default
+    const [selectedAreas, setSelectedAreas] = useState<string[]>([]); // Default empty
     const [joinedMissionIds, setJoinedMissionIds] = useState<Set<string>>(new Set());
     const [readKairanbanIds, setReadKairanbanIds] = useState<Set<string>>(new Set());
 

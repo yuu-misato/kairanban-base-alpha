@@ -61,7 +61,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                     avatar: profile.avatar_url || '',
                     score: profile.score || 0,
                     level: profile.level || 1,
-                    selectedAreas: profile.selected_areas || ['三郷市'],
+                    selectedAreas: profile.selected_areas || [],
                     isLineConnected: true,
                     shopName: profile.shop_name || undefined
                 };
