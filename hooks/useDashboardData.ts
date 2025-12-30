@@ -66,8 +66,8 @@ export const useDashboardData = (user: User | null, selectedAreas: string[], add
                 const householdsRes = results[4].status === 'fulfilled' ? results[4].value : [];
                 const readsRes = results[5].status === 'fulfilled' ? results[5].value : { data: [] };
 
-                if (householdsRes) setHouseholds(householdsRes);
-                if (readsRes.data) setMyReads(readsRes.data);
+                if (householdsRes) setHouseholds(householdsRes as any[]);
+                if (readsRes.data) setMyReads(readsRes.data as any[]);
 
                 let mappedKairan: Kairanban[] = [];
                 if (kairanRes.data) {
