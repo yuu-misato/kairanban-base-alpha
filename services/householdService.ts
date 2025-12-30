@@ -30,7 +30,7 @@ export const createHousehold = async (name: string, userId: string, address?: st
     const { data: member, error: memberError } = await supabase
         .from('household_members' as any)
         .insert({
-            household_id: household.id,
+            household_id: (household as any).id,
             user_id: userId,
             nickname: '管理者', // 初期値
             role: 'head'

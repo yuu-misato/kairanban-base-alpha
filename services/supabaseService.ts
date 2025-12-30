@@ -28,7 +28,7 @@ export const createProfile = async (user: any) => {
   console.log('Upserting Profile Payload:', payload);
 
   const { data, error } = await supabase
-    .from('profiles')
+    .from('profiles' as any)
     .upsert(payload, { onConflict: 'id' })
     .select();
 
@@ -42,7 +42,7 @@ export const createProfile = async (user: any) => {
 
 export const createCommunity = async (community: any) => {
   const { data, error } = await supabase
-    .from('communities')
+    .from('communities' as any)
     .insert({
       name: community.name,
       description: community.description,
@@ -56,12 +56,12 @@ export const createCommunity = async (community: any) => {
 
   if (!error && data) {
     // Auto-join the creator
-    await supabase.from('community_members').insert({
-      community_id: data.id,
+    await supabase.from('community_members' as any).insert({
+      community_id: (data as any).id,
       user_id: community.ownerId
     });
     // Initialize member count
-    await supabase.rpc('increment_member_count', { c_id: data.id });
+    await supabase.rpc('increment_member_count' as any, { c_id: (data as any).id });
   }
 
   return { data, error };
@@ -70,7 +70,7 @@ export const createCommunity = async (community: any) => {
 // Join community logic
 export const joinCommunity = async (communityId: string, userId: string) => {
   const { data, error } = await supabase
-    .from('community_members')
+    .from('community_members' as any)
     .insert({
       community_id: communityId,
       user_id: userId
@@ -79,7 +79,7 @@ export const joinCommunity = async (communityId: string, userId: string) => {
 
   // Increment member count
   if (!error) {
-    await supabase.rpc('increment_member_count', { c_id: communityId });
+    await supabase.rpc('increment_member_count' as any, { c_id: communityId });
   }
   return { data, error };
 };
@@ -87,7 +87,7 @@ export const joinCommunity = async (communityId: string, userId: string) => {
 // Fetch user's communities
 export const getMyCommunities = async (userId: string) => {
   const { data, error } = await supabase
-    .from('community_members')
+    .from('community_members' as any)
     .select('community_id, communities(*)') // Revert select
     .eq('user_id', userId);
 
@@ -114,7 +114,7 @@ export const getMyCommunities = async (userId: string) => {
 
 export const getCommunityByInviteCode = async (code: string) => {
   const { data, error } = await supabase
-    .from('communities')
+    .from('communities' as any)
     .select('*')
     .eq('invite_code', code)
     .single();
@@ -128,7 +128,7 @@ export const getCommunityByInviteCode = async (code: string) => {
  */
 export const getCommunityMembers = async (communityId: string) => {
   const { data, error } = await supabase
-    .from('community_members')
+    .from('community_members' as any)
     .select('*, profiles(nickname, avatar_url)')
     .eq('community_id', communityId);
 
@@ -153,7 +153,7 @@ export const getCommunityMembers = async (communityId: string) => {
  */
 export const updateMemberRole = async (communityId: string, userId: string, role: string) => {
   const { error } = await supabase
-    .from('community_members')
+    .from('community_members' as any)
     .update({ role })
     .match({ community_id: communityId, user_id: userId });
 
@@ -164,7 +164,7 @@ export const updateMemberRole = async (communityId: string, userId: string, role
  * コミュニティ管理者権限委譲
  */
 export const transferCommunityOwnership = async (communityId: string, newOwnerId: string) => {
-  const { error } = await supabase.rpc('transfer_community_ownership', {
+  const { error } = await supabase.rpc('transfer_community_ownership' as any, {
     community_id: communityId,
     new_owner_id: newOwnerId
   });
@@ -176,7 +176,7 @@ export const transferCommunityOwnership = async (communityId: string, newOwnerId
  */
 export const getProfile = async (userId: string) => {
   const { data, error } = await supabase
-    .from('profiles')
+    .from('profiles' as any)
     .select('*')
     .eq('id', userId)
     .single();
@@ -195,7 +195,7 @@ export const getPosts = async (areas: string[], currentUserId?: string, page: nu
 
   // Fetch posts with author info
   const { data: postsData, error: postsError } = await supabase
-    .from('posts')
+    .from('posts' as any)
     .select('*, author:profiles(nickname, avatar_url)')
     .in('area', areas)
     .order('created_at', { ascending: false })
@@ -207,7 +207,7 @@ export const getPosts = async (areas: string[], currentUserId?: string, page: nu
   if (!currentUserId) {
     // Map basic structure anyway to ensure consistency if caller expects mapped
     return {
-      data: postsData.map(p => ({
+      data: (postsData as any[]).map(p => ({
         ...p,
         isLiked: false,
         comments: []
@@ -217,29 +217,29 @@ export const getPosts = async (areas: string[], currentUserId?: string, page: nu
 
   // Fetch 'isLiked' and 'comments' count manually since complex joins are tricky in one go
   // 1. Get IDs of posts liked by this user
-  const postIds = postsData.map(p => p.id);
+  const postIds = (postsData as any[]).map(p => p.id);
 
   // Likes check
   const { data: userLikes } = await supabase
-    .from('post_likes')
+    .from('post_likes' as any)
     .select('post_id')
     .eq('user_id', currentUserId)
     .in('post_id', postIds);
 
-  const likedPostIds = new Set(userLikes?.map(l => l.post_id) || []);
+  const likedPostIds = new Set((userLikes as any[])?.map((l: any) => l.post_id) || []);
 
   // Comments fetch (simplified: fetch all comments for these posts)
   // OPTIMIZATION: For production with thousands of posts, this should be paginated or count-only.
   // For now, we fetch actual comments to show them.
   const { data: commentsData } = await supabase
-    .from('comments')
+    .from('comments' as any)
     .select('*, author:profiles(nickname, avatar_url)')
     .in('post_id', postIds)
     .order('created_at', { ascending: true });
 
   // Map back to posts
-  const mappedPosts = postsData.map(post => {
-    const postComments = commentsData?.filter(c => c.post_id === post.id) || [];
+  const mappedPosts = (postsData as any[]).map(post => {
+    const postComments = (commentsData as any[])?.filter((c: any) => c.post_id === post.id) || [];
     return {
       ...post,
       isLiked: likedPostIds.has(post.id),
@@ -274,7 +274,7 @@ export const createPost = async (post: any) => {
   };
 
   const { data, error } = await supabase
-    .from('posts')
+    .from('posts' as any)
     .insert(dbPayload)
     .select();
 
@@ -287,7 +287,7 @@ export const createPost = async (post: any) => {
  */
 export const getComments = async (postId: string) => {
   const { data, error } = await supabase
-    .from('comments')
+    .from('comments' as any)
     .select('*, author:profiles(nickname, avatar_url)')
     .eq('post_id', postId)
     .order('created_at', { ascending: true });
@@ -296,7 +296,7 @@ export const getComments = async (postId: string) => {
 
 export const addComment = async (comment: { postId: string, userId: string, content: string }) => {
   const { data, error } = await supabase
-    .from('comments')
+    .from('comments' as any)
     .insert({
       post_id: comment.postId,
       user_id: comment.userId,
@@ -312,7 +312,7 @@ export const addComment = async (comment: { postId: string, userId: string, cont
  */
 export const toggleLike = async (postId: string, userId: string) => {
   // Google Engineer Fix: Use database function (RPC) for atomicity
-  const { error } = await supabase.rpc('toggle_like', {
+  const { error } = await supabase.rpc('toggle_like' as any, {
     p_id: postId,
     u_id: userId
   });
@@ -325,7 +325,7 @@ export const toggleLike = async (postId: string, userId: string) => {
  */
 export const getKairanbans = async () => {
   const { data, error } = await supabase
-    .from('kairanbans')
+    .from('kairanbans' as any)
     .select('*')
     .order('created_at', { ascending: false });
   return { data, error };
@@ -337,7 +337,7 @@ export const getKairanbans = async () => {
 export const createKairanbanWithNotification = async (kairan: any) => {
   // 1. 回覧板データを挿入
   const { data, error } = await supabase
-    .from('kairanbans')
+    .from('kairanbans' as any)
     .insert([{
       title: kairan.title,
       content: kairan.content,
@@ -375,7 +375,7 @@ export const createKairanbanWithNotification = async (kairan: any) => {
  */
 export const getCoupons = async () => {
   const { data, error } = await supabase
-    .from('coupons')
+    .from('coupons' as any)
     .select('*');
   return { data, error };
 };
@@ -385,7 +385,7 @@ export const getCoupons = async () => {
  */
 export const registerLocalCoupon = async (coupon: any) => {
   const { data, error } = await supabase
-    .from('coupons')
+    .from('coupons' as any)
     .insert([{
       shop_name: coupon.shopName,
       title: coupon.title,
@@ -403,7 +403,7 @@ export const registerLocalCoupon = async (coupon: any) => {
  */
 export const getMissions = async () => {
   const { data, error } = await supabase
-    .from('volunteer_missions')
+    .from('volunteer_missions' as any)
     .select('*')
     .order('created_at', { ascending: false });
   return { data, error };
@@ -414,7 +414,7 @@ export const getMissions = async () => {
  */
 export const createMission = async (mission: any) => {
   const { data, error } = await supabase
-    .from('volunteer_missions')
+    .from('volunteer_missions' as any)
     .insert([{
       title: mission.title,
       description: mission.description,
@@ -432,7 +432,7 @@ export const createMission = async (mission: any) => {
  */
 export const joinMission = async (missionId: string, userId: string) => {
   // Google Engineer Fix: Use RPC to prevent race conditions (overbooking)
-  const { data, error } = await supabase.rpc('join_mission', {
+  const { data, error } = await supabase.rpc('join_mission' as any, {
     m_id: missionId,
     u_id: userId
   });
@@ -452,7 +452,7 @@ export const joinMission = async (missionId: string, userId: string) => {
  */
 export const getUserJoinedMissionIds = async (userId: string) => {
   const { data, error } = await supabase
-    .from('mission_participants')
+    .from('mission_participants' as any)
     .select('mission_id')
     .eq('user_id', userId);
 
@@ -467,7 +467,7 @@ export const getUserJoinedMissionIds = async (userId: string) => {
  */
 export const getAllUsers = async () => {
   const { data, error } = await supabase
-    .from('profiles')
+    .from('profiles' as any)
     .select('*')
     .order('created_at', { ascending: false });
   return { data, error };
@@ -478,7 +478,7 @@ export const getAllUsers = async () => {
  */
 export const updateUserRole = async (userId: string, role: string) => {
   const { data, error } = await supabase
-    .from('profiles')
+    .from('profiles' as any)
     .update({ role })
     .eq('id', userId)
     .select();
@@ -490,15 +490,15 @@ export const updateUserRole = async (userId: string, role: string) => {
  */
 export const giveUserPoints = async (userId: string, points: number) => {
   const { data: current } = await supabase
-    .from('profiles')
+    .from('profiles' as any)
     .select('score')
     .eq('id', userId)
     .single();
 
   if (current) {
     const { data, error } = await supabase
-      .from('profiles')
-      .update({ score: (current.score || 0) + points })
+      .from('profiles' as any)
+      .update({ score: ((current as any).score || 0) + points })
       .eq('id', userId)
       .select();
     return { data, error };
@@ -511,7 +511,7 @@ export const giveUserPoints = async (userId: string, points: number) => {
  */
 export const getAllCommunities = async () => {
   const { data, error } = await supabase
-    .from('communities')
+    .from('communities' as any)
     .select('*')
     .order('created_at', { ascending: false });
   return { data, error };
@@ -527,7 +527,7 @@ export const getAllCommunities = async () => {
  */
 export const deleteCommunity = async (communityId: string) => {
   const { error } = await supabase
-    .from('communities')
+    .from('communities' as any)
     .delete()
     .eq('id', communityId);
   return { error };
@@ -548,7 +548,7 @@ export const getAllUsersWithPlans = async () => {
   // Instead, we'll fetch users+plans first, then fetch usage stats separately or in a loop/map.
 
   const { data: users, error } = await supabase
-    .from('profiles')
+    .from('profiles' as any)
     .select('*, user_plans(plan_type, expires_at)')
     .order('created_at', { ascending: false });
 
@@ -561,7 +561,7 @@ export const getAllUsersWithPlans = async () => {
   const userIds = users.map((u: any) => u.id);
 
   const { data: usages } = await supabase
-    .from('user_monthly_usages')
+    .from('user_monthly_usages' as any)
     .select('user_id, message_count')
     .eq('year_month', yearMonth)
     .in('user_id', userIds);
@@ -598,21 +598,21 @@ export const getAllUsersWithPlans = async () => {
 export const updateUserPlan = async (userId: string, newPlan: string) => {
   // Check if mapping exists
   const { data: existing } = await supabase
-    .from('user_plans')
+    .from('user_plans' as any)
     .select('id')
     .eq('user_id', userId)
     .maybeSingle();
 
   if (existing) {
     const { data, error } = await supabase
-      .from('user_plans')
+      .from('user_plans' as any)
       .update({ plan_type: newPlan, updated_at: new Date().toISOString() })
       .eq('user_id', userId)
       .select();
     return { data, error };
   } else {
     const { data, error } = await supabase
-      .from('user_plans')
+      .from('user_plans' as any)
       .insert({ user_id: userId, plan_type: newPlan })
       .select();
     return { data, error };
@@ -625,7 +625,7 @@ export const updateUserPlan = async (userId: string, newPlan: string) => {
  */
 export const updateCommunity = async (communityId: string, updates: any) => {
   const { data, error } = await supabase
-    .from('communities')
+    .from('communities' as any)
     .update({
       name: updates.name,
       description: updates.description,
@@ -663,7 +663,7 @@ export const getAdminData = async (type: 'users' | 'missions' | 'communities' | 
  */
 export const getUserReadKairanbanIds = async (userId: string) => {
   const { data, error } = await supabase
-    .from('kairanban_reads')
+    .from('kairanban_reads' as any)
     .select('kairanban_id')
     .eq('user_id', userId);
 
@@ -678,7 +678,7 @@ export const getUserReadKairanbanIds = async (userId: string) => {
  */
 export const markKairanbanAsRead = async (userId: string, kairanbanId: string) => {
   const { error } = await supabase
-    .from('kairanban_reads')
+    .from('kairanban_reads' as any)
     .insert({ user_id: userId, kairanban_id: kairanbanId });
 
   return { error };

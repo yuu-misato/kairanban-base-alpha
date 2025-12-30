@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 
 import Layout from '@/components/Layout';
@@ -26,7 +26,7 @@ import { Post, PostCategory, Coupon, Kairanban, VolunteerMission, Community, Com
 import { MUNICIPALITY_COORDINATES } from '@/constants';
 import { getPosts, createPost, createKairanbanWithNotification, registerLocalCoupon, createProfile, createMission, joinMission, addComment, toggleLike, getKairanbans, getCoupons, getMissions, getAllCommunities, getMyCommunities, createCommunity, getCommunityMembers, joinCommunity, getUserJoinedMissionIds, getUserReadKairanbanIds, markKairanbanAsRead, analyzeKairanban } from '@/services/supabaseService';
 
-export default function DashboardPage() {
+function DashboardContent() {
     const {
         user,
         setUser,
@@ -448,7 +448,7 @@ export default function DashboardPage() {
     const handleRegisterCoupon = async (coupon: Coupon) => {
         const { data, error } = await registerLocalCoupon(coupon);
         if (!error && data) {
-            const newCoupon = { ...coupon, id: data[0].id };
+            const newCoupon = { ...coupon, id: (data[0] as any).id };
             setCoupons([newCoupon, ...coupons]);
             addScore(100);
         }
@@ -718,7 +718,7 @@ export default function DashboardPage() {
                                     if (!error && data) {
                                         // Update Local
                                         const created: Post = {
-                                            id: data[0].id,
+                                            id: (data[0] as any).id,
                                             ...postPayload,
                                             likes: 0,
                                             comments: [],
@@ -966,5 +966,13 @@ export default function DashboardPage() {
             <DebugPanel />
             <AreaSelectModal isOpen={isAreaModalOpen} onClose={() => setIsAreaModalOpen(false)} onAdd={handleAreaAdd} />
         </Layout>
+    );
+}
+
+export default function DashboardPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+            <DashboardContent />
+        </Suspense>
     );
 }

@@ -37,7 +37,7 @@ export const grantActionPoints = async (userId: string, actionKey: string) => {
     // We already have addScore logic in frontend, but secure backend approach is better.
 
     // Using existing RPC or direct update if insecure is okay for prototype
-    const { error } = await supabase.rpc('increment_score', {
+    const { error } = await supabase.rpc('increment_score' as any, {
         user_id: userId,
         amount: setting.points_amount
     });

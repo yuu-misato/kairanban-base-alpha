@@ -31,7 +31,7 @@ export const markKairanbanRead = async (kairanbanId: string, userId: string, mem
     }
 
     const { data, error } = await supabase
-        .from('kairanban_reads')
+        .from('kairanban_reads' as any)
         .upsert(readsToInsert, { onConflict: 'kairanban_id, household_member_id' }) // This might fail for the user_id unique constraint if not careful
         // Actually, upsert might be tricky with two unique constraints.
         // Let's do simple insert and ignore duplicates? Or simple select first.
@@ -44,7 +44,7 @@ export const markKairanbanRead = async (kairanbanId: string, userId: string, mem
 export const getMyReadStatus = async (userId: string) => {
     // Get all reads by this user (for themselves or members)
     const { data, error } = await supabase
-        .from('kairanban_reads')
+        .from('kairanban_reads' as any)
         .select('*')
         .eq('user_id', userId);
 

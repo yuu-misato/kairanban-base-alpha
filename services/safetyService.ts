@@ -20,7 +20,7 @@ export const sendSafetyReport = async (userId: string, reports: { memberId: stri
     }));
 
     const { data, error } = await supabase
-        .from('safety_reports')
+        .from('safety_reports' as any)
         .insert(records)
         .select();
 
