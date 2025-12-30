@@ -1,0 +1,115 @@
+-- Create communities table
+CREATE TABLE public.communities (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    name TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Create profiles table (extends auth.users)
+CREATE TABLE public.profiles (
+    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    community_id UUID REFERENCES public.communities(id),
+    role TEXT CHECK (role IN ('admin', 'user')) DEFAULT 'user',
+    display_name TEXT,
+    avatar_url TEXT,
+    line_user_id TEXT UNIQUE,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);
+
+-- Create posts table
+CREATE TABLE public.posts (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    community_id UUID REFERENCES public.communities(id) NOT NULL,
+    author_id UUID REFERENCES public.profiles(id) NOT NULL,
+    content TEXT,
+    image_urls TEXT[], -- Array of strings
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Create read_receipts table
+CREATE TABLE public.read_receipts (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    post_id UUID REFERENCES public.posts(id) ON DELETE CASCADE NOT NULL,
+    user_id UUID REFERENCES public.profiles(id) NOT NULL,
+    read_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    UNIQUE(post_id, user_id)
+);
+
+-- Enable RLS
+ALTER TABLE public.communities ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.posts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.read_receipts ENABLE ROW LEVEL SECURITY;
+
+-- Policies
+
+-- Communities: Viewable by everyone (for selection)
+CREATE POLICY "Communities are viewable by everyone" ON public.communities FOR SELECT USING (true);
+
+-- Profiles: 
+-- 1. Users can view profiles in their community
+CREATE POLICY "Users can view profiles in their community" ON public.profiles
+    FOR SELECT USING (
+        community_id IN (
+            SELECT community_id FROM public.profiles WHERE id = auth.uid()
+        )
+    );
+-- 2. Users can see their own profile (in case they have no community yet)
+CREATE POLICY "Users can view own profile" ON public.profiles 
+    FOR SELECT USING (auth.uid() = id);
+
+-- 3. Users can update own profile
+CREATE POLICY "Users can update own profile" ON public.profiles
+    FOR UPDATE USING (auth.uid() = id);
+
+-- Posts
+-- 1. View: Members of the same community
+CREATE POLICY "Members can view community posts" ON public.posts
+    FOR SELECT USING (
+        community_id IN (
+            SELECT community_id FROM public.profiles WHERE id = auth.uid()
+        )
+    );
+
+-- 2. Insert: Only admins
+CREATE POLICY "Admins can create posts" ON public.posts
+    FOR INSERT WITH CHECK (
+        EXISTS (
+            SELECT 1 FROM public.profiles
+            WHERE id = auth.uid() AND role = 'admin' AND community_id = posts.community_id
+        )
+    );
+
+-- Read Receipts
+-- 1. View: Users can view their own receipts
+CREATE POLICY "Users can view own receipts" ON public.read_receipts
+    FOR SELECT USING (auth.uid() = user_id);
+
+-- 2. View: Admins can view all receipts for their community posts
+CREATE POLICY "Admins can view community receipts" ON public.read_receipts
+    FOR SELECT USING (
+        EXISTS (
+            SELECT 1 FROM public.profiles
+            WHERE id = auth.uid() AND role = 'admin'
+            AND community_id = (SELECT community_id FROM public.posts WHERE id = read_receipts.post_id)
+        )
+    );
+
+-- 3. Insert: Users can mark as read (insert own)
+CREATE POLICY "Users can mark as read" ON public.read_receipts
+    FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+-- Auto-create profile on signup
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS trigger AS $$
+BEGIN
+  INSERT INTO public.profiles (id, display_name)
+  VALUES (new.id, new.raw_user_meta_data->>'full_name');
+  RETURN new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Trigger
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
