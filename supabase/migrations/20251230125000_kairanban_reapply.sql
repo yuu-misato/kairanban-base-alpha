@@ -1,6 +1,13 @@
 -- Enable Extensions
 create extension if not exists "uuid-ossp";
 
+-- Ensure app_role type exists
+DO $$ BEGIN
+    CREATE TYPE public.app_role AS ENUM ('admin', 'contractor', 'client', 'resident', 'business', 'chokai_leader');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
 -- 1. Profiles (Update existing or Create new)
 -- Drop existing profiles if they conflict or alter them. We'll try to be additive.
 create table if not exists public.profiles (
