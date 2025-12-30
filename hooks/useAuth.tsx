@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { AuthChangeEvent, Session } from '@supabase/supabase-js';
 import { supabase, getProfile } from '../services/supabaseService';
 import { User } from '../types';
 import { useLiffAutoAuth } from './useLiffAutoAuth';
@@ -126,7 +127,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             setIsLoading(false);
         }
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event: AuthChangeEvent, session: Session | null) => {
             logger.log('Auth State Change:', event);
             setSession(session);
 
