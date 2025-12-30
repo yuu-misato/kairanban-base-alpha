@@ -97,6 +97,12 @@ function DashboardContent() {
     const [showScorePopup, setShowScorePopup] = useState<{ show: boolean, amount: number }>({ show: false, amount: 0 });
     const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
+    useEffect(() => {
+        console.log('--- ENV DEBUG ---');
+        console.log('NEXT_PUBLIC_SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL);
+        console.log('NEXT_PUBLIC_SUPABASE_ANON_KEY Length:', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.length);
+    }, []);
+
     const addToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
         const id = Math.random().toString(36).substring(7);
         setToasts(prev => [...prev, { id, type, message }]);
