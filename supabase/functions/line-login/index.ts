@@ -253,10 +253,15 @@ serve(async (req) => {
                     // Attempt linking fallback if we have email
                     console.error("Linked user found but Auth User missing.");
                 } else {
-                    const { data: link } = await supabase.auth.admin.generateLink({
+                    const { data: link, error: linkGenError } = await supabase.auth.admin.generateLink({
                         type: 'magiclink',
                         email: user.user.email!,
+                        options: { redirectTo: redirect_uri }
                     });
+
+                    if (linkGenError || !link?.properties?.action_link) {
+                        throw new Error('Failed to generate auth link for existing user');
+                    }
 
                     // Update
                     await supabase.from('line_accounts').update({
@@ -265,10 +270,7 @@ serve(async (req) => {
                         updated_at: new Date().toISOString()
                     }).eq('line_user_id', lineProfile.userId);
 
-                    return new Response(JSON.stringify({
-                        token_hash: link.properties?.hashed_token,
-                        status: 'existing_user'
-                    }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+                    return Response.redirect(link.properties.action_link, 302);
                 }
             }
 
