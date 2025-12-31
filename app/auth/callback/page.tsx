@@ -73,22 +73,22 @@ const CallbackContent = () => {
 
                     try {
                         if (authData?.session) {
-                            const { error: sessionError } = await supabase.auth.setSession(authData.session);
-                            if (sessionError) console.error('Set session error:', sessionError);
-                            // Do not await checkSession here to avoid hanging. 
-                            // useAuth's onAuthStateChange listener will pick up the new session.
+                            console.log('Setting session...');
+                            // Prevent setSession from hanging indefinitely
+                            await Promise.race([
+                                supabase.auth.setSession(authData.session),
+                                new Promise(resolve => setTimeout(resolve, 2000))
+                            ]);
+                            console.log('Session set (or timed out).');
                         }
                     } catch (e) {
                         console.error('Session handling error:', e);
                     }
 
-                    // Ensure navigation happens
+                    // Force navigation using window.location to ensure full reload and state sync
                     logger.log('Navigating to dashboard...');
-                    router.replace('/dashboard');
-                    // Fallback if router fails
-                    setTimeout(() => {
-                        window.location.href = '/dashboard';
-                    }, 1000);
+                    window.location.href = '/dashboard';
+                    return; // Stop execution data?.token_hash logic
                 } else if (data?.status === 'new_user') {
                     setStatus('new_user');
                     setLineProfile(data.line_profile);
