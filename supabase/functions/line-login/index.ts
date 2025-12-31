@@ -292,16 +292,23 @@ serve(async (req) => {
 
                 if (insertError) throw insertError;
 
-                // Generate Session
-                const { data: link } = await supabase.auth.admin.generateLink({
+                // Generate Session Link
+                const { data: link, error: linkGenError } = await supabase.auth.admin.generateLink({
                     type: 'magiclink',
-                    email: emailToUse
+                    email: emailToUse,
+                    options: {
+                        redirectTo: redirect_uri
+                    }
                 });
 
-                return new Response(JSON.stringify({
-                    token_hash: link.properties?.hashed_token,
-                    status: 'registered_automatically'
-                }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+                if (linkGenError || !link?.properties?.action_link) {
+                    throw new Error('Failed to generate auth link');
+                }
+
+                // Redirect user to Supabase Auth Verify URL
+                // This forces the browser to set cookies/session via standard flow
+                console.log("Redirecting to action link:", link.properties.action_link);
+                return Response.redirect(link.properties.action_link, 302);
             }
         }
 
