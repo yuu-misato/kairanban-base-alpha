@@ -467,27 +467,18 @@ function DashboardContent() {
         }
     };
 
-    if (!user) { // Simple loading state or redirect fallback
-        return (
-            <div className="flex items-center justify-center min-h-screen bg-slate-50">
-                <div className="text-center">
-                    <div className="w-12 h-12 bg-emerald-500 rounded-full animate-bounce mx-auto mb-4"></div>
-                    <p className="font-bold text-slate-400">Loading...</p>
-                </div>
-            </div>
-        );
-    }
+    // Redirect to onboarding if profile is incomplete
+    useEffect(() => {
+        if (user && !isLoading) {
+            if (user.nickname === '名無し' || !user.selectedAreas || user.selectedAreas.length === 0) {
+                // Prevent redirect loop if data is just slow to load?
+                // Assuming user object is reliable here.
+                router.replace('/onboarding');
+            }
+        }
+    }, [user, isLoading, router]);
 
-    // Check if we need to show registration modal (e.g. if name is '名無し')
-    // Logic for tempUser is handled by checking user data
-    if (user.nickname === '名無し' || !user.selectedAreas || user.selectedAreas.length === 0 || isEditingProfile) {
-        return (
-            <RegistrationModal
-                initialNickname={user.nickname === '名無し' ? '' : user.nickname}
-                onRegister={handleRegistrationComplete}
-            />
-        );
-    }
+    // Check if we need to show registration modal - REMOVED, Handled by redirect above
 
 
     const renderContent = () => {
