@@ -57,18 +57,7 @@ function DashboardContent() {
         }
     }, [user, isAuthLoading, router]);
 
-    // IMPORTANT: React Hooks must be called before any early returns.
-    // We moved this block down here to satisfy Lint rules.
-    if (!user) {
-        return (
-            <div className="flex items-center justify-center min-h-screen bg-slate-50">
-                <div className="text-center">
-                    <div className="w-12 h-12 bg-emerald-500 rounded-full animate-bounce mx-auto mb-4"></div>
-                    <p className="font-bold text-slate-400">Loading...</p>
-                </div>
-            </div>
-        );
-    }
+
 
     const searchParams = useSearchParams();
     const initialTab = searchParams?.get('tab') || 'chokai';
@@ -904,6 +893,31 @@ function DashboardContent() {
             default: return null;
         }
     };
+
+    // --- RENDER GUARD ---
+    // ALL hooks must be defined above this point.
+    if (isLoading || isAuthLoading || isAuthChecking) {
+        return (
+            <div className="flex items-center justify-center min-h-screen bg-slate-50">
+                <div className="text-center">
+                    <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <p className="font-bold text-slate-400">Loading...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (!user) {
+        return (
+            <div className="flex items-center justify-center min-h-screen bg-slate-50">
+                <div className="text-center">
+                    <div className="w-12 h-12 bg-gray-300 rounded-full animate-bounce mx-auto mb-4"></div>
+                    <p className="font-bold text-slate-400">Please log in.</p>
+                    <button onClick={() => router.push('/')} className="mt-4 px-4 py-2 bg-emerald-600 text-white rounded">Go to Login</button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <Layout
