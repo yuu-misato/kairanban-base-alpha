@@ -6,7 +6,7 @@ export const getPosts = async (areas: string[], currentUserId?: string, page: nu
 
     // Fetch posts with author info
     const { data: postsData, error: postsError } = await supabase
-        .from('posts' as any)
+        .from('posts')
         .select('*, author:profiles(nickname, avatar_url)')
         .in('area', areas)
         .order('created_at', { ascending: false })
@@ -32,7 +32,7 @@ export const getPosts = async (areas: string[], currentUserId?: string, page: nu
 
     // Likes check
     const { data: userLikes } = await supabase
-        .from('post_likes' as any)
+        .from('post_likes')
         .select('post_id')
         .eq('user_id', currentUserId)
         .in('post_id', postIds);
@@ -43,7 +43,7 @@ export const getPosts = async (areas: string[], currentUserId?: string, page: nu
     // OPTIMIZATION: For production with thousands of posts, this should be paginated or count-only.
     // For now, we fetch actual comments to show them.
     const { data: commentsData } = await supabase
-        .from('comments' as any)
+        .from('comments')
         .select('*, author:profiles(nickname, avatar_url)')
         .in('post_id', postIds)
         .order('created_at', { ascending: true });
@@ -82,7 +82,7 @@ export const createPost = async (post: any) => {
     };
 
     const { data, error } = await supabase
-        .from('posts' as any)
+        .from('posts')
         .insert(dbPayload)
         .select();
 
@@ -92,7 +92,7 @@ export const createPost = async (post: any) => {
 
 export const getComments = async (postId: string) => {
     const { data, error } = await supabase
-        .from('comments' as any)
+        .from('comments')
         .select('*, author:profiles(nickname, avatar_url)')
         .eq('post_id', postId)
         .order('created_at', { ascending: true });
@@ -101,7 +101,7 @@ export const getComments = async (postId: string) => {
 
 export const addComment = async (comment: { postId: string, userId: string, content: string }) => {
     const { data, error } = await supabase
-        .from('comments' as any)
+        .from('comments')
         .insert({
             post_id: comment.postId,
             user_id: comment.userId,
@@ -114,7 +114,7 @@ export const addComment = async (comment: { postId: string, userId: string, cont
 
 export const toggleLike = async (postId: string, userId: string) => {
     // Google Engineer Fix: Use database function (RPC) for atomicity
-    const { error } = await supabase.rpc('toggle_like' as any, {
+    const { error } = await supabase.rpc('toggle_like', {
         p_id: postId,
         u_id: userId
     });

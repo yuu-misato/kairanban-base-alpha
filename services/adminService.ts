@@ -2,7 +2,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 export const getAllUsers = async () => {
     const { data, error } = await supabase
-        .from('profiles' as any)
+        .from('profiles')
         .select('*')
         .order('created_at', { ascending: false });
     return { data, error };
@@ -10,7 +10,7 @@ export const getAllUsers = async () => {
 
 export const updateUserRole = async (userId: string, role: string) => {
     const { data, error } = await supabase
-        .from('profiles' as any)
+        .from('profiles')
         .update({ role })
         .eq('id', userId)
         .select();
@@ -19,7 +19,7 @@ export const updateUserRole = async (userId: string, role: string) => {
 
 export const getAllCommunities = async () => {
     const { data, error } = await supabase
-        .from('communities' as any)
+        .from('communities')
         .select('*')
         .order('created_at', { ascending: false });
     return { data, error };
@@ -27,7 +27,7 @@ export const getAllCommunities = async () => {
 
 export const deleteCommunity = async (communityId: string) => {
     const { error } = await supabase
-        .from('communities' as any)
+        .from('communities')
         .delete()
         .eq('id', communityId);
     return { error };
@@ -35,7 +35,7 @@ export const deleteCommunity = async (communityId: string) => {
 
 export const updateCommunity = async (communityId: string, updates: any) => {
     const { data, error } = await supabase
-        .from('communities' as any)
+        .from('communities')
         .update({
             name: updates.name,
             description: updates.description,
@@ -49,7 +49,7 @@ export const updateCommunity = async (communityId: string, updates: any) => {
 
 export const getAllUsersWithPlans = async () => {
     const { data: users, error } = await supabase
-        .from('profiles' as any)
+        .from('profiles')
         .select('*, user_plans(plan_type, expires_at)')
         .order('created_at', { ascending: false });
 
@@ -62,7 +62,7 @@ export const getAllUsersWithPlans = async () => {
     const userIds = users.map((u: any) => u.id);
 
     const { data: usages } = await supabase
-        .from('user_monthly_usages' as any)
+        .from('user_monthly_usages')
         .select('user_id, message_count')
         .eq('year_month', yearMonth)
         .in('user_id', userIds);
@@ -86,21 +86,21 @@ export const getAllUsersWithPlans = async () => {
 export const updateUserPlan = async (userId: string, newPlan: string) => {
     // Check if mapping exists
     const { data: existing } = await supabase
-        .from('user_plans' as any)
+        .from('user_plans')
         .select('id')
         .eq('user_id', userId)
         .maybeSingle();
 
     if (existing) {
         const { data, error } = await supabase
-            .from('user_plans' as any)
+            .from('user_plans')
             .update({ plan_type: newPlan, updated_at: new Date().toISOString() })
             .eq('user_id', userId)
             .select();
         return { data, error };
     } else {
         const { data, error } = await supabase
-            .from('user_plans' as any)
+            .from('user_plans')
             .insert({ user_id: userId, plan_type: newPlan })
             .select();
         return { data, error };

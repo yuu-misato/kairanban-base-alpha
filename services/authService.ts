@@ -29,7 +29,7 @@ export const createProfile = async (user: any) => {
         );
 
         const dbPromise = supabase
-            .from('profiles' as any)
+            .from('profiles')
             .upsert(payload, { onConflict: 'id' })
             .select();
 
