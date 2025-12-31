@@ -46,8 +46,19 @@ function DashboardContent() {
         }
     }, [user, isAuthLoading, router]);
 
-    // Added Logic: If user is missing (and not just loading), we should block rendering
-    // This satisfies TypeScript that 'user' is not null in renderContent
+    // Redirect to onboarding if profile is incomplete
+    useEffect(() => {
+        if (user && !isAuthLoading) {
+            if (user.nickname === '名無し' || !user.selectedAreas || user.selectedAreas.length === 0) {
+                // Prevent redirect loop if data is just slow to load?
+                // Assuming user object is reliable here.
+                router.replace('/onboarding');
+            }
+        }
+    }, [user, isAuthLoading, router]);
+
+    // IMPORTANT: React Hooks must be called before any early returns.
+    // We moved this block down here to satisfy Lint rules.
     if (!user) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-slate-50">
