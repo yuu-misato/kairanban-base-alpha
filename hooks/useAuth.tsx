@@ -26,7 +26,7 @@ const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 const getStoredUser = (): User | null => {
     if (typeof window === 'undefined') return null;
     try {
-        const stored = localStorage.getItem('saitama_user_profile');
+        const stored = localStorage.getItem('saitama_user_profile_v2');
         return stored ? JSON.parse(stored) : null;
     } catch (e) {
         console.error('Failed to parse stored user', e);
@@ -69,7 +69,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 };
                 setUser(u);
                 if (typeof window !== 'undefined') {
-                    localStorage.setItem('saitama_user_profile', JSON.stringify(u));
+                    localStorage.setItem('saitama_user_profile_v2', JSON.stringify(u));
                 }
             } else {
                 logger.warn('Profile not found in DB');
@@ -98,7 +98,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                     logger.log('No active session found during check. Clearing local state.');
                     if (getStoredUser()) {
                         setUser(null);
-                        localStorage.removeItem('saitama_user_profile');
+                        localStorage.removeItem('saitama_user_profile_v2');
                         // 強制リロードを実行し、不整合な状態を完全にリセットする
                         if (typeof window !== 'undefined') {
                             window.location.href = '/';
@@ -149,7 +149,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             } else if (event === 'SIGNED_OUT') {
                 setUser(null);
                 if (typeof window !== 'undefined') {
-                    localStorage.removeItem('saitama_user_profile');
+                    localStorage.removeItem('saitama_user_profile_v2');
                 }
             }
 
@@ -200,7 +200,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             setUser: (u) => {
                 setUser(u);
                 if (typeof window !== 'undefined') {
-                    localStorage.setItem('saitama_user_profile', JSON.stringify(u));
+                    localStorage.setItem('saitama_user_profile_v2', JSON.stringify(u));
                 }
             },
             isLoading,
