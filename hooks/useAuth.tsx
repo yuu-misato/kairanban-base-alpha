@@ -3,9 +3,9 @@ import { AuthChangeEvent, Session } from '@supabase/supabase-js';
 import { supabase, getProfile } from '../services/supabaseService';
 import { User } from '../types';
 import { useLiffAutoAuth } from './useLiffAutoAuth';
-import { useLiffAutoAuth } from './useLiffAutoAuth';
+// Duplicate import removed
 import { logger } from '../lib/logger';
-import { logger } from '../lib/logger';
+// Duplicate import removed
 
 interface AuthContextType {
     user: User | null;
@@ -118,10 +118,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         handleSessionRestored
     );
 
-    const { isRestoring: isLiffRestoring, isLiffProcessing } = useLiffAutoAuth(
-        !!session,
-        handleSessionRestored
-    );
+    // Duplicate useLiffAutoAuth block removed
 
     useEffect(() => {
         // Hydrate from local storage on mount

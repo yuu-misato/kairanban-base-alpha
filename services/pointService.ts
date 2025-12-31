@@ -47,3 +47,20 @@ export const giveUserPoints = async (userId: string, points: number) => {
 
     return { data, error: null };
 };
+
+export const getActionPointSettings = async () => {
+    const { data, error } = await supabase
+        .from('action_point_settings')
+        .select('*')
+        .order('display_order', { ascending: true });
+    return { data, error };
+};
+
+export const updateActionPointSetting = async (id: string, updates: any) => {
+    const { data, error } = await supabase
+        .from('action_point_settings')
+        .update(updates)
+        .eq('id', id)
+        .select();
+    return { data, error };
+};
