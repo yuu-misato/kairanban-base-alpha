@@ -362,15 +362,19 @@ function DashboardContent() {
     const handleRegistrationComplete = async (nickname: string, areas: string[]) => {
         if (!user) return;
         const updatedUser = { ...user, nickname, selectedAreas: areas };
-        const { error } = await createProfile(updatedUser);
-        if (error) {
-            addToast('保存に失敗しましたが、続行します', 'info');
-        } else {
-            addToast('プロフィールを更新しました', 'success');
-        }
+
+        // UIを即座に更新してユーザー体験を損なわないようにする（Optimistic UI）
+        // DB保存が遅延・失敗しても、アプリの操作は継続できるようにする
         setUser(updatedUser);
         setSelectedAreas(areas);
         setIsEditingProfile(false);
+        addToast('設定を適用しました', 'success');
+
+        // バックグラウンドで非同期に保存
+        createProfile(updatedUser).catch(err => {
+            console.error('Background profile save failed:', err);
+            // 失敗してもユーザーの作業を中断させない
+        });
     };
 
     const handleAreaAdd = async (newArea: string) => {
