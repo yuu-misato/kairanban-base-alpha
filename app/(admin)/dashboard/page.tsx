@@ -134,35 +134,44 @@ function DashboardContent() {
         e.preventDefault();
         if (!newCommunity.name || !user) return;
 
-        // Limit check: Max 2 communities for free plan
-        const ownedCount = myCommunities.filter(c => c.ownerId === user.id).length;
-        if (ownedCount >= 2) {
-            addToast('無料プランでは作成できるコミュニティは2つまでです', 'error');
-            return;
-        }
+        setIsLoading(true);
 
-        // Generate simple invite code
-        const inviteCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+        try {
+            // Limit check: Max 2 communities for free plan
+            const ownedCount = myCommunities.filter(c => c.ownerId === user.id).length;
+            if (ownedCount >= 2) {
+                addToast('無料プランでは作成できるコミュニティは2つまでです', 'error');
+                return;
+            }
 
-        const { data, error } = await createCommunity({
-            name: newCommunity.name,
-            description: newCommunity.description,
-            ownerId: user.id,
-            imageUrl: '', // default
-            inviteCode,
-            isSecret: newCommunity.isSecret
-        });
+            // Generate simple invite code
+            const inviteCode = Math.random().toString(36).substring(2, 8).toUpperCase();
 
-        if (error) {
-            console.error(error);
-            addToast('コミュニティの作成に失敗しました', 'error');
-        } else {
-            addToast('コミュニティを作成しました', 'success');
-            setIsCreatingCommunityState(false);
-            setNewCommunity({ name: '', description: '', isSecret: false });
-            // Refresh
-            const { data: communities } = await getMyCommunities(user.id);
-            if (communities) setMyCommunities(communities);
+            const { data, error } = await createCommunity({
+                name: newCommunity.name,
+                description: newCommunity.description,
+                ownerId: user.id,
+                imageUrl: '', // default
+                inviteCode,
+                isSecret: newCommunity.isSecret
+            });
+
+            if (error) {
+                console.error('Create community error:', error);
+                addToast(`コミュニティの作成に失敗しました: ${error.message || '不明なエラー'}`, 'error');
+            } else {
+                addToast('コミュニティを作成しました', 'success');
+                setIsCreatingCommunityState(false);
+                setNewCommunity({ name: '', description: '', isSecret: false });
+                // Refresh
+                const { data: communities } = await getMyCommunities(user.id);
+                if (communities) setMyCommunities(communities);
+            }
+        } catch (err) {
+            console.error('Unexpected error during community creation:', err);
+            addToast('予期せぬエラーが発生しました', 'error');
+        } finally {
+            setIsLoading(false);
         }
     };
 

@@ -1,15 +1,16 @@
 import { supabase } from '@/integrations/supabase/client';
 
 export const createCommunity = async (community: any) => {
-    // RLSエラーを防ぐためにセッションを明示的に検証
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session || !session.user) {
-        console.error('CREATE COMMUNITY FAILED: User not authenticated.');
+    // RLSエラーを防ぐためにユーザーを明示的に検証
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+        console.error('CREATE COMMUNITY AUTH ERROR:', authError);
         return { data: null, error: { message: 'ログイン有効期限が切れています。一度ログアウトして再ログインしてください。' } as any };
     }
 
     // オーナーIDが認証ユーザーと一致することを確認
-    const safeOwnerId = session.user.id;
+    const safeOwnerId = user.id;
     console.log('Creating community for user:', safeOwnerId);
     const { data, error } = await supabase
         .from('communities' as any)
