@@ -153,9 +153,9 @@ const CallbackContent = () => {
                     await checkSession();
                 }
 
-                router.replace('/dashboard');
+                router.replace('/onboarding');
                 setTimeout(() => {
-                    window.location.href = '/dashboard';
+                    window.location.href = '/onboarding';
                 }, 1000);
             } else {
                 throw new Error('登録に失敗しました: セッションがありません');
