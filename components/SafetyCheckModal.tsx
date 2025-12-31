@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Household } from '../services/householdService';
+import { Household } from '../types';
 import { sendSafetyReport } from '../services/safetyService';
 
 interface SafetyCheckModalProps {
