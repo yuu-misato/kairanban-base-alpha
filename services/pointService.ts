@@ -22,20 +22,28 @@ export const registerLocalCoupon = async (coupon: any) => {
     return { data, error };
 };
 
+// ユーザーにポイントを付与する (Secure RPC)
 export const giveUserPoints = async (userId: string, points: number) => {
-    const { data: current } = await supabase
-        .from('profiles' as any)
-        .select('score')
-        .eq('id', userId)
-        .single();
+    // クライアントサイドでの直接DB更新は脆弱性があるため廃止
+    // RPC (Remote Procedure Call) を使用してサーバーサイドで安全に計算・更新する
+    // 必要なRPC: increment_points(user_id uuid, amount integer)
 
-    if (current) {
-        const { data, error } = await supabase
-            .from('profiles' as any)
-            .update({ score: ((current as any).score || 0) + points })
-            .eq('id', userId)
-            .select();
-        return { data, error };
+    const { data, error } = await supabase.rpc('increment_points' as any, {
+        user_id: userId,
+        amount: points
+    });
+
+    if (error) {
+        console.error("ポイント付与エラー (RPC):", error);
+        return { data: null, error };
     }
-    return { data: null, error: 'ユーザーが見つかりません' };
+
+    // RPCの戻り値をチェック (JSONで返却される想定)
+    const result = data as any;
+    if (result && result.success === false) {
+        console.error("ポイント付与失敗 (Logic):", result.error);
+        return { data: null, error: result.error };
+    }
+
+    return { data, error: null };
 };

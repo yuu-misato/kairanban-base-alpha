@@ -9,32 +9,32 @@ export const createProfile = async (user: any) => {
         return { data: null, error: { message: 'ユーザーIDが見つかりません' } };
     }
 
+    // プロファイルの作成または更新（権限昇格を防ぐため、sensitiveなフィールドは除外）
+    // セキュリティ対策: クライアントからの role/score/level 操作を無効化
+    // これらはサーバーサイドまたは管理者機能でのみ変更可能とする
     const payload = {
         id: user.id,
         nickname: user.nickname || '名無し',
         avatar_url: user.avatar || user.avatar_url || '',
-        role: user.role || 'resident',
-        level: user.level || 1,
-        score: user.score || 100,
+        // role: user.role, // 削除: ユーザー入力を信頼しない
+        // score: user.score, // 削除
+        // level: user.level, // 削除
         selected_areas: user.selectedAreas || user.selected_areas || [],
-        updated_at: new Date().toISOString()
+        shop_name: user.shopName || null, // 新しいフィールド
+        is_line_connected: user.isLineConnected || false, // 新しいフィールド
+        updated_at: new Date().toISOString(),
     };
 
     console.log('プロファイル更新ペイロード:', payload);
 
     try {
-        // 5秒タイムアウトを設定
-        const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('接続がタイムアウトしました。Supabase設定を確認してください。')), 5000)
-        );
-
-        const dbPromise = supabase
-            .from('profiles')
+        // profilesテーブルは型定義(Types.ts)に存在しない可能性があるため、anyキャストで回避
+        // 将来的には正しい型定義を反映させる必要があります
+        const { data, error } = await supabase
+            .from('profiles' as any)
             .upsert(payload, { onConflict: 'id' })
-            .select();
-
-        const result: any = await Promise.race([dbPromise, timeoutPromise]);
-        const { data, error } = result;
+            .select()
+            .single();
 
         if (error) {
             console.error('プロファイルのDB保存に失敗しました (RLSまたは制約エラー):', error);
