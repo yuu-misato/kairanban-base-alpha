@@ -117,3 +117,17 @@ export interface CommunityMember {
   avatar?: string;
 }
 
+
+export interface HouseholdMember {
+  id: string;
+  household_id: string;
+  user_id?: string;
+  nickname: string;
+  role: 'head' | 'member';
+}
+
+export interface Household {
+  id: string;
+  name: string;
+  members: HouseholdMember[];
+}

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Kairanban } from '../types';
-import { Household, HouseholdMember } from '../services/householdService';
+import { Kairanban, Household, HouseholdMember } from '../types';
+// import { Household, HouseholdMember } from '../services/householdService';
 import { markKairanbanRead } from '../services/kairanbanService';
 
 interface KairanbanCardProps {
