@@ -37,16 +37,55 @@ serve(async (req) => {
 
         const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-        // Parse Body safely
-        let body;
-        try {
-            body = await req.json();
-        } catch (e) {
-            throw new Error('Invalid JSON body');
+        // Unified Input Parsing (GET vs POST)
+        let action, code, redirect_uri, line_user_id, display_name, picture_url, email, nickname;
+
+        const reqUrl = new URL(req.url);
+
+        if (req.method === 'GET') {
+            // Handle Direct Browser Redirect
+            const params = reqUrl.searchParams;
+            code = params.get('code');
+            // 'action' param or infer from code
+            if (params.get('action')) {
+                action = params.get('action');
+            } else if (code) {
+                action = 'callback';
+            } else {
+                action = 'health'; // Default to health check/info
+            }
+
+            redirect_uri = params.get('redirect_uri') || params.get('redirectUri');
+
+            // For other params if needed
+            line_user_id = params.get('line_user_id');
+        } else {
+            // Handle POST JSON
+            let body;
+            try {
+                body = await req.json();
+            } catch (e) {
+                throw new Error('Invalid JSON body');
+            }
+            action = body.action;
+            code = body.code;
+            redirect_uri = body.redirect_uri || body.redirectUri;
+            line_user_id = body.line_user_id;
+            display_name = body.display_name;
+            picture_url = body.picture_url;
+            // Profile data might be nested
+            if (body.profile_data) {
+                email = body.profile_data.email;
+                nickname = body.profile_data.nickname;
+            }
         }
 
-        const { action, code, profile_data, line_user_id, display_name, picture_url } = body;
-        const redirect_uri = body.redirect_uri || body.redirectUri;
+        // 1. Health Check
+        if (action === 'health') {
+            return new Response(JSON.stringify({ status: 'ok', timestamp: new Date().toISOString() }), {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+        }
 
         // 2. Generate Auth URL
         if (action === 'get_auth_url') {

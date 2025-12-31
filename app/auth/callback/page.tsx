@@ -9,112 +9,50 @@ import { logger } from '@/lib/logger';
 const CallbackContent = () => {
     const searchParams = useSearchParams();
     const router = useRouter();
-    const { checkSession } = useAuth();
-    const [status, setStatus] = useState('ログイン処理中...');
+    const [status, setStatus] = useState('サーバーへ転送中...');
     const [error, setError] = useState<string | null>(null);
-    const [email, setEmail] = useState('');
-    const [lineProfile, setLineProfile] = useState<any>(null);
 
-    const processedRef = React.useRef(false);
+    // We no longer need to check session manually or fetch from Edge Function here.
+    // We simply redirect the browser to the Edge Function.
 
     useEffect(() => {
         const handleCallback = async () => {
-            if (processedRef.current) return;
-            processedRef.current = true;
-
             const code = searchParams.get('code');
             const state = searchParams.get('state');
 
-            if (!code || !state) {
-                setError('不正なアクセスです (コードまたはステートが不足しています)');
+            // If query params contain 'code', it's a callback from LINE
+            if (code) {
+                setStatus('認証サーバーへ転送しています...');
+                const returnUrl = `${window.location.origin}/dashboard`;
+                const edgeFunctionUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/line-login`;
+
+                // Construct Redirect URL with params for the Edge Function (GET request)
+                const targetUrl = new URL(edgeFunctionUrl);
+                targetUrl.searchParams.set('code', code);
+                if (state) targetUrl.searchParams.set('state', state);
+                targetUrl.searchParams.set('redirect_uri', returnUrl);
+
+                console.log('Forwarding to Edge Function:', targetUrl.toString());
+                window.location.replace(targetUrl.toString());
                 return;
             }
 
-            try {
-                const redirectUri = window.location.origin + '/auth/callback';
-                logger.log('Processing callback...', { code, redirectUri });
-                setStatus('サーバーと通信中...');
-
-                const functionUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/line-login`;
-
-                const response = await fetch(functionUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`
-                    },
-                    body: JSON.stringify({
-                        action: 'callback',
-                        code,
-                        redirect_uri: redirectUri
-                    })
-                });
-
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(`サーバーエラー (${response.status}): ${errorText}`);
-                }
-
-                setStatus('最終確認中...');
-                const data = await response.json();
-
-                if (data?.error) throw new Error(data.error);
-
-                if (data?.token_hash) {
-                    setStatus('ログインの仕上げをしています...');
-
-                    try {
-                        // 15秒のタイムアウトを設定
-                        const { data: authData, error: otpError } = await Promise.race([
-                            supabase.auth.verifyOtp({
-                                token_hash: data.token_hash,
-                                type: 'magiclink'
-                            }),
-                            new Promise<{ data: { session: null }, error: any }>((_, reject) =>
-                                setTimeout(() => reject(new Error('認証がタイムアウトしました。もう一度お試しください。')), 15000)
-                            )
-                        ]);
-
-                        if (otpError) throw otpError;
-
-                        setStatus('ようこそ！');
-
-                        if (authData?.session) {
-                            console.log('Setting session...');
-                            await supabase.auth.setSession(authData.session);
-                            console.log('Session set.');
-                        }
-                    } catch (e: any) {
-                        console.error('OTP Verification Failed:', e);
-                        setStatus('認証に時間がかかっています...');
-                        // エラーでもセッションがあるか確認してみる（すでに確立している場合があるため）
-                        const { data: sessionData } = await supabase.auth.getSession();
-                        if (sessionData.session) {
-                            setStatus('ログインに成功しました！');
-                        } else {
-                            throw e;
-                        }
-                    }
-
-                    // Force navigation using window.location to ensure full reload and state sync
-                    logger.log('Navigating to dashboard...');
-                    window.location.href = '/dashboard';
-                    return; // Stop execution
-                } else if (data?.status === 'new_user') {
-                    setStatus('new_user');
-                    setLineProfile(data.line_profile);
-                } else {
-                    throw new Error('予期せぬレスポンス形式です');
-                }
-            } catch (err: any) {
-                console.error('Login Callback Error:', err);
-                setError(err.message || 'ログインに失敗しました');
-                // 5秒後にトップへ戻るオプション等を出すために少し待つなどの処理も可
+            // If we land here WITHOUT code, check if we have a session hash (from Supabase Verify redirect)
+            // supabase-js handles hash parsing automatically via onAuthStateChange.
+            // So we just wait or redirect to dashboard if user is already present as a fail-safe.
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                router.replace('/dashboard');
+            } else {
+                // No code, no session -> Home
+                // But wait, allow a moment for onAuthStateChange to fire?
+                // No, getSession is enough.
+                // router.replace('/');
             }
         };
 
         handleCallback();
-    }, [searchParams, router, checkSession]);
+    }, [searchParams, router]);
 
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
