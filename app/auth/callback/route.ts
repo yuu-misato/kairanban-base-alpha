@@ -3,9 +3,14 @@ import { type NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
     console.log('[Auth Callback API] Hit');
-    const { searchParams, origin } = new URL(request.url);
-    const code = searchParams.get('code');
-    const state = searchParams.get('state');
+    const requestUrl = new URL(request.url);
+    const code = requestUrl.searchParams.get('code');
+    const state = requestUrl.searchParams.get('state');
+
+    // Determine correct origin (handle proxy/Amplify)
+    const protocol = request.headers.get('x-forwarded-proto') || requestUrl.protocol.replace(':', '');
+    const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || requestUrl.host;
+    const origin = `${protocol}://${host}`;
 
     // If no code, maybe an error or direct access -> redirect home
     if (!code) {
