@@ -2,8 +2,8 @@ import { supabase } from '../integrations/supabase/client';
 
 export { supabase };
 
-// Re-export all specialized services to maintain backward compatibility
-// This file now acts as a central hub/facade for the service layer.
+// 特化型サービスを再エクスポートして後方互換性を維持する
+// このファイルはサービス層のハブ/ファサードとして機能します。
 export * from './authService';
 export * from './communityService';
 export * from './kairanbanService';

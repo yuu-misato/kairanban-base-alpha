@@ -1,14 +1,14 @@
 import { supabase } from '@/integrations/supabase/client';
 
 export const createCommunity = async (community: any) => {
-    // Explicit session verification to prevent RLS failures
+    // RLSエラーを防ぐためにセッションを明示的に検証
     const { data: { session } } = await supabase.auth.getSession();
     if (!session || !session.user) {
         console.error('CREATE COMMUNITY FAILED: User not authenticated.');
         return { data: null, error: { message: 'ログイン有効期限が切れています。一度ログアウトして再ログインしてください。' } as any };
     }
 
-    // Ensure ownerId matches the authenticated user
+    // オーナーIDが認証ユーザーと一致することを確認
     const safeOwnerId = session.user.id;
     console.log('Creating community for user:', safeOwnerId);
     const { data, error } = await supabase
@@ -25,12 +25,12 @@ export const createCommunity = async (community: any) => {
         .single();
 
     if (!error && data) {
-        // Auto-join the creator
+        // 作成者を自動的に参加させる
         await supabase.from('community_members' as any).insert({
             community_id: (data as any).id,
             user_id: safeOwnerId
         });
-        // Initialize member count
+        // メンバー数を初期化
         await supabase.rpc('increment_member_count' as any, { c_id: (data as any).id });
     }
 
@@ -46,7 +46,7 @@ export const joinCommunity = async (communityId: string, userId: string) => {
         })
         .select();
 
-    // Increment member count
+    // メンバー数をインクリメント
     if (!error) {
         await supabase.rpc('increment_member_count' as any, { c_id: communityId });
     }
@@ -56,11 +56,11 @@ export const joinCommunity = async (communityId: string, userId: string) => {
 export const getMyCommunities = async (userId: string) => {
     const { data, error } = await supabase
         .from('community_members' as any)
-        .select('community_id, communities(*)') // Revert select
+        .select('community_id, communities(*)') // 選択を元に戻す
         .eq('user_id', userId);
 
     if (data) {
-        // Flatten the structure to match Community type
+        // Community型に合わせて構造をフラット化
         return {
             data: data.map((item: any) => ({
                 id: item.communities.id,
@@ -71,7 +71,7 @@ export const getMyCommunities = async (userId: string) => {
                 membersCount: item.communities.members_count,
                 isSecret: item.communities.is_secret,
                 imageUrl: item.communities.image_url,
-                // Infer admin role if owner, otherwise 'member' (fallback until migration applied)
+                // オーナーならadmin、それ以外はmemberと推論（マイグレーション適用までのフォールバック）
                 role: (item.communities.owner_id === userId ? 'admin' : 'member') as 'admin' | 'member'
             })),
             error: null

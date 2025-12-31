@@ -4,7 +4,7 @@ export const getPosts = async (areas: string[], currentUserId?: string, page: nu
     const from = page * limit;
     const to = from + limit - 1;
 
-    // Fetch posts with author info
+    // 投稿と投稿者情報を取得
     const { data: postsData, error: postsError } = await supabase
         .from('posts')
         .select('*, author:profiles(nickname, avatar_url)')
@@ -14,9 +14,9 @@ export const getPosts = async (areas: string[], currentUserId?: string, page: nu
 
     if (postsError || !postsData) return { data: [], error: postsError };
 
-    // If no user, return raw posts (mapped lightly)
+    // ユーザーがいない場合は未加工の投稿データを返す（最低限のマッピングは行う）
     if (!currentUserId) {
-        // Map basic structure anyway to ensure consistency if caller expects mapped
+        // 呼び出し元が一貫したマッピングを期待している場合に対応
         return {
             data: (postsData as any[]).map(p => ({
                 ...p,
@@ -26,11 +26,11 @@ export const getPosts = async (areas: string[], currentUserId?: string, page: nu
         };
     }
 
-    // Fetch 'isLiked' and 'comments' count manually since complex joins are tricky in one go
-    // 1. Get IDs of posts liked by this user
+    // 複雑な結合クエリを避けるため、「いいね」と「コメント」は手動で取得する
+    // 1. このユーザーがいいねした投稿IDを取得
     const postIds = (postsData as any[]).map(p => p.id);
 
-    // Likes check
+    // いいねチェック
     const { data: userLikes } = await supabase
         .from('post_likes')
         .select('post_id')
@@ -39,16 +39,16 @@ export const getPosts = async (areas: string[], currentUserId?: string, page: nu
 
     const likedPostIds = new Set((userLikes as any[])?.map((l: any) => l.post_id) || []);
 
-    // Comments fetch (simplified: fetch all comments for these posts)
-    // OPTIMIZATION: For production with thousands of posts, this should be paginated or count-only.
-    // For now, we fetch actual comments to show them.
+    // コメント取得（簡易版：これらの投稿に対する全コメントを取得）
+    // 最適化: 本番環境で数千件のコメントがある場合はページネーションかカウントのみにするべき。
+    // 現状は表示用に実際のコメントを取得する。
     const { data: commentsData } = await supabase
         .from('comments')
         .select('*, author:profiles(nickname, avatar_url)')
         .in('post_id', postIds)
         .order('created_at', { ascending: true });
 
-    // Map back to posts
+    // 投稿データにマッピングして返す
     const mappedPosts = (postsData as any[]).map(post => {
         const postComments = (commentsData as any[])?.filter((c: any) => c.post_id === post.id) || [];
         return {
@@ -69,7 +69,7 @@ export const getPosts = async (areas: string[], currentUserId?: string, page: nu
 };
 
 export const createPost = async (post: any) => {
-    // Map frontend camelCase to DB snake_case
+    // フロントエンドのキャメルケースをDBのスネークケースに変換
     const dbPayload = {
         title: post.title,
         content: post.content,
@@ -86,7 +86,7 @@ export const createPost = async (post: any) => {
         .insert(dbPayload)
         .select();
 
-    if (error) console.error('Create Post Error:', error);
+    if (error) console.error('投稿作成エラー:', error);
     return { data, error };
 };
 

@@ -24,7 +24,7 @@ export const createMission = async (mission: any) => {
 };
 
 export const joinMission = async (missionId: string, userId: string) => {
-    // Google Engineer Fix: Use RPC to prevent race conditions (overbooking)
+    // Googleエンジニア修正: レースコンディション（定員オーバー）を防ぐためにRPCを使用
     const { data, error } = await supabase.rpc('join_mission' as any, {
         m_id: missionId,
         u_id: userId
@@ -33,7 +33,7 @@ export const joinMission = async (missionId: string, userId: string) => {
     if (data === true) {
         return { data, error: null };
     } else if (data === false) {
-        return { data: null, error: 'Already joined or full' };
+        return { data: null, error: 'すでに参加済みか、定員に達しています' };
     }
 
     return { data, error };

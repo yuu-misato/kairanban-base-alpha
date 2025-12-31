@@ -37,5 +37,5 @@ export const giveUserPoints = async (userId: string, points: number) => {
             .select();
         return { data, error };
     }
-    return { data: null, error: 'User not found' };
+    return { data: null, error: 'ユーザーが見つかりません' };
 };

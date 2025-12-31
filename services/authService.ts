@@ -5,8 +5,8 @@ import { supabase } from '@/integrations/supabase/client';
  */
 export const createProfile = async (user: any) => {
     if (!user.id) {
-        console.error('CRITICAL: Attempted to create profile without User ID');
-        return { data: null, error: { message: 'User ID is missing' } };
+        console.error('重大なエラー: ユーザーIDなしでプロファイル作成を試みました');
+        return { data: null, error: { message: 'ユーザーIDが見つかりません' } };
     }
 
     const payload = {
@@ -20,12 +20,12 @@ export const createProfile = async (user: any) => {
         updated_at: new Date().toISOString()
     };
 
-    console.log('Upserting Profile Payload:', payload);
+    console.log('プロファイル更新ペイロード:', payload);
 
     try {
         // 5秒タイムアウトを設定
         const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Connection timed out. Check Supabase settings.')), 5000)
+            setTimeout(() => reject(new Error('接続がタイムアウトしました。Supabase設定を確認してください。')), 5000)
         );
 
         const dbPromise = supabase
@@ -37,16 +37,16 @@ export const createProfile = async (user: any) => {
         const { data, error } = result;
 
         if (error) {
-            console.error('FAILED TO SAVE PROFILE TO DB (RLS or Constraint Error):', error);
+            console.error('プロファイルのDB保存に失敗しました (RLSまたは制約エラー):', error);
         } else {
-            console.log('Profile saved successfully:', data);
+            console.log('プロファイルが正常に保存されました:', data);
         }
         return { data, error };
 
     } catch (err: any) {
-        console.error('CRITICAL: Profile save failed or timed out:', err);
+        console.error('重大なエラー: プロファイル保存失敗またはタイムアウト:', err);
         // UIにエラーを返すためにダミーのエラーオブジェクトを返す
-        return { data: null, error: { message: err.message || 'Connection Timed Out' } };
+        return { data: null, error: { message: err.message || '接続タイムアウト' } };
     }
 };
 

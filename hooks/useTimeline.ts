@@ -15,7 +15,7 @@ export const useTimeline = (areas: string[], currentUserId?: string) => {
             if (error) throw error;
             if (data) setPosts(data as Post[]);
         } catch (err: any) {
-            setError(err.message || 'Failed to fetch posts');
+            setError(err.message || '投稿の取得に失敗しました');
         } finally {
             setIsLoading(false);
         }
@@ -25,14 +25,14 @@ export const useTimeline = (areas: string[], currentUserId?: string) => {
         if (!currentUserId) return;
         const { error } = await createPost({ ...post, userId: currentUserId });
         if (!error) {
-            await fetchPosts(); // Refresh
+            await fetchPosts(); // 再読み込み
         }
         return { error };
     };
 
     const handleLike = async (postId: string) => {
         if (!currentUserId) return;
-        // Optimistic update
+        // 楽観的更新 (Optimistic Update)
         setPosts(prev => prev.map(p =>
             p.id === postId
                 ? { ...p, likes: p.isLiked ? p.likes - 1 : p.likes + 1, isLiked: !p.isLiked }
@@ -41,7 +41,7 @@ export const useTimeline = (areas: string[], currentUserId?: string) => {
 
         const { error } = await toggleLike(postId, currentUserId);
         if (error) {
-            // Revert on error
+            // エラー時は元に戻す
             await fetchPosts();
         }
     };

@@ -23,7 +23,7 @@ export const createKairanbanWithNotification = async (kairan: any) => {
         .select();
 
     if (!error && kairan.sent_to_line) {
-        console.log("Invoking line-broadcast Edge Function...");
+        console.log("LINE一斉送信 Edge Functionを起動中...");
         const { data: funcData, error: funcError } = await supabase.functions.invoke('line-broadcast', {
             body: {
                 title: kairan.title,
@@ -35,9 +35,9 @@ export const createKairanbanWithNotification = async (kairan: any) => {
         });
 
         if (funcError) {
-            console.error("Failed to send LINE notification:", funcError);
+            console.error("LINE通知の送信に失敗しました:", funcError);
         } else {
-            console.log("LINE notification sent successfully:", funcData);
+            console.log("LINE通知が正常に送信されました:", funcData);
         }
     }
 
