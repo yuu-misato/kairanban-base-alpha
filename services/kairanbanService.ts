@@ -64,6 +64,29 @@ export const markKairanbanAsRead = async (userId: string, kairanbanId: string) =
     return { error };
 };
 
+// KairanbanCard.tsx から呼び出される、世帯メンバー対応版の既読処理
+export const markKairanbanRead = async (kairanbanId: string, userId: string, memberIds: string[]) => {
+    // メンバー指定がない場合は、ユーザー自身の既読（既存関数を利用）
+    if (!memberIds || memberIds.length === 0) {
+        return markKairanbanAsRead(userId, kairanbanId);
+    }
+
+    // メンバー指定がある場合は、それぞれのメンバーについて既読をつける
+    // household_member_id を設定する
+    const inserts = memberIds.map(mid => ({
+        kairanban_id: kairanbanId,
+        user_id: userId, // 操作者として記録（またはNULLでもよいが、誰が操作したか残すならこれ）
+        household_member_id: mid,
+        read_at: new Date().toISOString()
+    }));
+
+    const { error } = await supabase
+        .from('kairanban_reads' as any)
+        .insert(inserts);
+
+    return { error };
+};
+
 export const analyzeKairanban = async (fileBase64: string, mimeType: string) => {
     // console.log("Calling AI analysis...", mimeType);
     const { data, error } = await supabase.functions.invoke('analyze-kairanban', {
