@@ -63,6 +63,9 @@ export async function GET(request: NextRequest) {
     } catch (error) {
         console.error('[Auth Callback API] Error during authentication:', error);
         // On error, redirect to login with error message or home
-        return NextResponse.redirect(`${origin}/?error=auth_failed`);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        // Encode error to be URL safe
+        const encodedError = encodeURIComponent(errorMessage);
+        return NextResponse.redirect(`${origin}/?error=auth_failed&details=${encodedError}`);
     }
 }
