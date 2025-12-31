@@ -9,9 +9,9 @@ export const getLiffUrl = (path: string): string => {
 };
 
 export type LineNotificationType =
-  | 'message' 
-  | 'application' 
-  | 'project_update' 
+  | 'message'
+  | 'application'
+  | 'project_update'
   | 'announcement'
   | 'work_request'
   | 'application_accepted'
@@ -56,25 +56,13 @@ export const sendLineNotification = async ({
   }
 };
 
-// Helper to get company name for a user
+// Helper to get name for a user (simplified for Kairanban BASE)
 export const getCompanyName = async (userId: string): Promise<string> => {
-  // Try contractor profile first
-  const { data: contractor } = await supabase
-    .from('contractor_profiles')
-    .select('company_name')
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('nickname')
     .eq('id', userId)
     .single();
-  
-  if (contractor?.company_name) {
-    return contractor.company_name;
-  }
 
-  // Try client profile
-  const { data: client } = await supabase
-    .from('client_profiles')
-    .select('company_name')
-    .eq('id', userId)
-    .single();
-  
-  return client?.company_name || '会員';
+  return profile?.nickname || 'ユーザー';
 };
