@@ -16,43 +16,49 @@ const CallbackContent = () => {
     // We simply redirect the browser to the Edge Function.
 
     useEffect(() => {
-        const handleCallback = async () => {
-            const code = searchParams.get('code');
-            const state = searchParams.get('state');
+        // 1. Handle Code (Forward to Edge Function)
+        const code = searchParams.get('code');
+        const state = searchParams.get('state');
 
-            // If query params contain 'code', it's a callback from LINE
-            if (code) {
-                setStatus('認証サーバーへ転送しています...');
-                // The redirect_uri passed to LINE token exchange MUST match the original callback URL exactly.
-                const callbackUrl = `${window.location.origin}/auth/callback`;
-                const edgeFunctionUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/line-login`;
+        if (code) {
+            setStatus('認証サーバーへ転送しています...');
+            const callbackUrl = `${window.location.origin}/auth/callback`;
+            const edgeFunctionUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/line-login`;
 
-                // Construct Redirect URL with params for the Edge Function (GET request)
-                const targetUrl = new URL(edgeFunctionUrl);
-                targetUrl.searchParams.set('code', code);
-                if (state) targetUrl.searchParams.set('state', state);
-                targetUrl.searchParams.set('redirect_uri', callbackUrl);
+            const targetUrl = new URL(edgeFunctionUrl);
+            targetUrl.searchParams.set('code', code);
+            if (state) targetUrl.searchParams.set('state', state);
+            targetUrl.searchParams.set('redirect_uri', callbackUrl);
 
-                console.log('Forwarding to Edge Function:', targetUrl.toString());
-                window.location.replace(targetUrl.toString());
-                return;
+            console.log('Forwarding to Edge Function:', targetUrl.toString());
+            window.location.replace(targetUrl.toString());
+            return;
+        }
+
+        // 2. Handle Session (Return from Edge Function/Supabase)
+        setStatus('セッションを確認中...');
+
+        // Listener for Auth State Change (Reliable for Magic Links/Hash params)
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+            console.log("[AuthCallback] Auth Event:", event);
+            if (event === 'SIGNED_IN' || session) {
+                setStatus('ログイン成功！ダッシュボードへ移動します...');
+                // Short delay to ensure local storage persists
+                setTimeout(() => router.replace('/dashboard'), 100);
             }
+        });
 
-            // If we land here WITHOUT code, check if we have a session hash (from Supabase Verify redirect)
-            // supabase-js handles hash parsing automatically via onAuthStateChange.
-            // So we just wait or redirect to dashboard if user is already present as a fail-safe.
-            const { data: { session } } = await supabase.auth.getSession();
+        // Initial check in case state is already settled
+        supabase.auth.getSession().then(({ data: { session } }) => {
             if (session) {
+                console.log("[AuthCallback] Session found immediately");
                 router.replace('/dashboard');
-            } else {
-                // No code, no session -> Home
-                // But wait, allow a moment for onAuthStateChange to fire?
-                // No, getSession is enough.
-                // router.replace('/');
             }
-        };
+        });
 
-        handleCallback();
+        return () => {
+            subscription.unsubscribe();
+        };
     }, [searchParams, router]);
 
     // Simplified Render: purely a redirect step
