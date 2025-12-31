@@ -17,7 +17,7 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     storage: typeof window !== 'undefined' ? localStorage : undefined,
     persistSession: true,
     autoRefreshToken: true,
-    // 【重要】これをfalseにしないと、LINEログインのリダイレクトと競合してタイムアウトする
     detectSessionInUrl: false,
+    storageKey: 'kairanban-auth-token',
   }
 });

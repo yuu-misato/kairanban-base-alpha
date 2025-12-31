@@ -92,6 +92,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 setSession(s);
                 if (s) {
                     await loadProfile(s.user.id);
+                } else {
+                    // Session missing but LocalStorage might have stale data
+                    // Force clear to ensure consistency
+                    logger.log('No active session found during check. Clearing local state.');
+                    if (getStoredUser()) {
+                        setUser(null);
+                        localStorage.removeItem('saitama_user_profile');
+                    }
                 }
             };
 
