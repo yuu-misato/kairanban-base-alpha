@@ -62,33 +62,44 @@ const CallbackContent = () => {
 
                 if (data?.token_hash) {
                     setStatus('ログインの仕上げをしています...');
-                    const { data: authData, error: otpError } = await supabase.auth.verifyOtp({
-                        token_hash: data.token_hash,
-                        type: 'magiclink'
-                    });
-
-                    if (otpError) throw otpError;
-
-                    setStatus('ようこそ！');
 
                     try {
+                        // 15秒のタイムアウトを設定
+                        const { data: authData, error: otpError } = await Promise.race([
+                            supabase.auth.verifyOtp({
+                                token_hash: data.token_hash,
+                                type: 'magiclink'
+                            }),
+                            new Promise<{ data: { session: null }, error: any }>((_, reject) =>
+                                setTimeout(() => reject(new Error('認証がタイムアウトしました。もう一度お試しください。')), 15000)
+                            )
+                        ]);
+
+                        if (otpError) throw otpError;
+
+                        setStatus('ようこそ！');
+
                         if (authData?.session) {
                             console.log('Setting session...');
-                            // Prevent setSession from hanging indefinitely
-                            await Promise.race([
-                                supabase.auth.setSession(authData.session),
-                                new Promise(resolve => setTimeout(resolve, 2000))
-                            ]);
-                            console.log('Session set (or timed out).');
+                            await supabase.auth.setSession(authData.session);
+                            console.log('Session set.');
                         }
-                    } catch (e) {
-                        console.error('Session handling error:', e);
+                    } catch (e: any) {
+                        console.error('OTP Verification Failed:', e);
+                        setStatus('認証に時間がかかっています...');
+                        // エラーでもセッションがあるか確認してみる（すでに確立している場合があるため）
+                        const { data: sessionData } = await supabase.auth.getSession();
+                        if (sessionData.session) {
+                            setStatus('ログインに成功しました！');
+                        } else {
+                            throw e;
+                        }
                     }
 
                     // Force navigation using window.location to ensure full reload and state sync
                     logger.log('Navigating to dashboard...');
                     window.location.href = '/dashboard';
-                    return; // Stop execution data?.token_hash logic
+                    return; // Stop execution
                 } else if (data?.status === 'new_user') {
                     setStatus('new_user');
                     setLineProfile(data.line_profile);
@@ -98,6 +109,7 @@ const CallbackContent = () => {
             } catch (err: any) {
                 console.error('Login Callback Error:', err);
                 setError(err.message || 'ログインに失敗しました');
+                // 5秒後にトップへ戻るオプション等を出すために少し待つなどの処理も可
             }
         };
 
