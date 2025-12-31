@@ -56,12 +56,22 @@ export const createProfile = async (user: any) => {
 };
 
 export const createCommunity = async (community: any) => {
+  // Explicit session verification to prevent RLS failures
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session || !session.user) {
+    console.error('CREATE COMMUNITY FAILED: User not authenticated.');
+    return { data: null, error: { message: 'ログイン有効期限が切れています。一度ログアウトして再ログインしてください。' } as any };
+  }
+
+  // Ensure ownerId matches the authenticated user
+  const safeOwnerId = session.user.id;
+  console.log('Creating community for user:', safeOwnerId);
   const { data, error } = await supabase
     .from('communities' as any)
     .insert({
       name: community.name,
       description: community.description,
-      owner_id: community.ownerId,
+      owner_id: safeOwnerId,
       image_url: community.imageUrl,
       invite_code: community.inviteCode,
       is_secret: community.isSecret
