@@ -46,6 +46,19 @@ function DashboardContent() {
         }
     }, [user, isAuthLoading, router]);
 
+    // Added Logic: If user is missing (and not just loading), we should block rendering
+    // This satisfies TypeScript that 'user' is not null in renderContent
+    if (!user) {
+        return (
+            <div className="flex items-center justify-center min-h-screen bg-slate-50">
+                <div className="text-center">
+                    <div className="w-12 h-12 bg-emerald-500 rounded-full animate-bounce mx-auto mb-4"></div>
+                    <p className="font-bold text-slate-400">Loading...</p>
+                </div>
+            </div>
+        );
+    }
+
     const searchParams = useSearchParams();
     const initialTab = searchParams?.get('tab') || 'chokai';
 
