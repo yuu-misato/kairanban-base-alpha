@@ -67,6 +67,7 @@ serve(async (req) => {
             action = body.action;
             code = body.code;
             redirect_uri = body.redirect_uri || body.redirectUri;
+            const dashboard_url = body.dashboard_url; // New parameter
             line_user_id = body.line_user_id;
             display_name = body.display_name;
             picture_url = body.picture_url;
@@ -256,7 +257,7 @@ serve(async (req) => {
                     const { data: link, error: linkGenError } = await supabase.auth.admin.generateLink({
                         type: 'magiclink',
                         email: user.user.email!,
-                        options: { redirectTo: redirect_uri }
+                        options: { redirectTo: dashboard_url || redirect_uri }
                     });
 
                     if (linkGenError || !link?.properties?.action_link) {
@@ -270,7 +271,11 @@ serve(async (req) => {
                         updated_at: new Date().toISOString()
                     }).eq('line_user_id', lineProfile.userId);
 
-                    return Response.redirect(link.properties.action_link, 302);
+                    return new Response(JSON.stringify({
+                        action_link: link.properties.action_link
+                    }), {
+                        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+                    });
                 }
             }
 
@@ -335,7 +340,7 @@ serve(async (req) => {
                     type: 'magiclink',
                     email: emailToUse,
                     options: {
-                        redirectTo: redirect_uri
+                        redirectTo: dashboard_url || redirect_uri
                     }
                 });
 
@@ -345,8 +350,12 @@ serve(async (req) => {
 
                 // Redirect user to Supabase Auth Verify URL
                 // This forces the browser to set cookies/session via standard flow
-                console.log("Redirecting to action link:", link.properties.action_link);
-                return Response.redirect(link.properties.action_link, 302);
+                console.log("Returning action link (JSON):", link.properties.action_link);
+                return new Response(JSON.stringify({
+                    action_link: link.properties.action_link
+                }), {
+                    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+                });
             }
         }
 
