@@ -54,94 +54,14 @@ const CallbackContent = () => {
         handleCallback();
     }, [searchParams, router]);
 
-    const handleRegister = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!email || !lineProfile) return;
-
-        setStatus('登録処理中...');
-        try {
-            const functionUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/line-login`;
-
-            const response = await fetch(functionUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`
-                },
-                body: JSON.stringify({
-                    action: 'register',
-                    profile_data: {
-                        email,
-                        line_user_id: lineProfile.line_user_id,
-                        display_name: lineProfile.display_name,
-                        picture_url: lineProfile.picture_url,
-                        nickname: lineProfile.display_name,
-                        area: '未設定'
-                    }
-                })
-            });
-
-            if (!response.ok) {
-                const txt = await response.text();
-                throw new Error(`登録エラー: ${txt}`);
-            }
-            const data = await response.json();
-
-            if (data?.error) throw new Error(data.error);
-
-            if (data?.token_hash) {
-                const { data: authData, error: otpError } = await supabase.auth.verifyOtp({
-                    token_hash: data.token_hash,
-                    type: 'magiclink'
-                });
-                if (otpError) throw otpError;
-
-                if (authData?.session) {
-                    await supabase.auth.setSession(authData.session);
-                    await checkSession(authData.session);
-                } else {
-                    await checkSession();
-                }
-
-                router.replace('/onboarding');
-                setTimeout(() => {
-                    window.location.href = '/onboarding';
-                }, 1000);
-            } else {
-                throw new Error('登録に失敗しました: セッションがありません');
-            }
-
-        } catch (err: any) {
-            setError(err.message);
-            setStatus('new_user');
-        }
-    };
-
+    // Simplified Render: purely a redirect step
     if (error) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
                 <div className="p-8 text-center bg-white rounded-2xl shadow-xl">
-                    <h2 className="text-2xl font-bold text-slate-800 mb-2">Login Failed</h2>
+                    <h2 className="text-2xl font-bold text-slate-800 mb-2">Login Redirect Failed</h2>
                     <p className="text-red-600 mb-4">{error}</p>
                     <button onClick={() => router.push('/')} className="px-4 py-2 bg-indigo-600 text-white rounded">Back to Top</button>
-                </div>
-            </div>
-        );
-    }
-
-    if (status === 'new_user' && lineProfile) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
-                <div className="max-w-md w-full bg-white p-8 rounded-2xl shadow-xl">
-                    <div className="text-center mb-8">
-                        <img src={lineProfile.picture_url} alt="Profile" className="w-24 h-24 rounded-full mx-auto mb-6" />
-                        <h2 className="text-2xl font-bold">Welcome, {lineProfile.display_name}</h2>
-                        <p className="text-slate-500">Please enter your email to complete registration.</p>
-                    </div>
-                    <form onSubmit={handleRegister} className="space-y-4">
-                        <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="w-full px-4 py-2 border rounded" placeholder="Email" />
-                        <button type="submit" className="w-full bg-green-600 text-white py-3 rounded font-bold">Register</button>
-                    </form>
                 </div>
             </div>
         );
@@ -150,7 +70,9 @@ const CallbackContent = () => {
     return (
         <div className="min-h-screen flex items-center justify-center bg-indigo-50">
             <div className="text-center">
+                <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
                 <div className="text-xl font-bold text-indigo-700 animate-pulse">{status}</div>
+                <p className="text-sm text-slate-500 mt-2">Security check in progress...</p>
             </div>
         </div>
     );
