@@ -47,7 +47,9 @@ const SystemDiagnostics: React.FC = () => {
                 dataLength: data?.length
             };
         } catch (e: any) {
-            res.dbRead = { ok: false, error: e.message };
+            console.error('Diagnostic DB Error:', e);
+            // エラーオブジェクトを丸ごと文字列化して保存
+            res.dbRead = { ok: false, error: JSON.stringify(e, Object.getOwnPropertyNames(e)) };
         }
 
         setResults(res);
