@@ -20,5 +20,6 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     autoRefreshToken: true,
     detectSessionInUrl: false,
     storageKey: 'kairanban-auth-v2',
+    flowType: 'implicit', // Fix timeout issue: Edge Function generates non-PKCE tokens
   }
 });
