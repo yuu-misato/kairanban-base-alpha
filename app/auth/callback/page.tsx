@@ -23,14 +23,15 @@ const CallbackContent = () => {
             // If query params contain 'code', it's a callback from LINE
             if (code) {
                 setStatus('認証サーバーへ転送しています...');
-                const returnUrl = `${window.location.origin}/dashboard`;
+                // The redirect_uri passed to LINE token exchange MUST match the original callback URL exactly.
+                const callbackUrl = `${window.location.origin}/auth/callback`;
                 const edgeFunctionUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/line-login`;
 
                 // Construct Redirect URL with params for the Edge Function (GET request)
                 const targetUrl = new URL(edgeFunctionUrl);
                 targetUrl.searchParams.set('code', code);
                 if (state) targetUrl.searchParams.set('state', state);
-                targetUrl.searchParams.set('redirect_uri', returnUrl);
+                targetUrl.searchParams.set('redirect_uri', callbackUrl);
 
                 console.log('Forwarding to Edge Function:', targetUrl.toString());
                 window.location.replace(targetUrl.toString());

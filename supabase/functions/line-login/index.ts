@@ -13,12 +13,7 @@ serve(async (req) => {
     }
 
     try {
-        // Health Check
-        if (req.method === 'GET') {
-            return new Response(JSON.stringify({ status: 'ok', timestamp: new Date().toISOString() }), {
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            });
-        }
+
 
         const LINE_LOGIN_CHANNEL_ID = Deno.env.get('LINE_CHANNEL_ID') ?? Deno.env.get('LINE_LOGIN_CHANNEL_ID');
         const LINE_LOGIN_CHANNEL_SECRET = Deno.env.get('LINE_CHANNEL_SECRET') ?? Deno.env.get('LINE_LOGIN_CHANNEL_SECRET');
@@ -51,8 +46,10 @@ serve(async (req) => {
                 action = params.get('action');
             } else if (code) {
                 action = 'callback';
+                console.log("Action inferred as 'callback'. Code:", code?.substring(0, 5) + "...");
             } else {
                 action = 'health'; // Default to health check/info
+                console.log("Defaulting to 'health' action. Params:", [...params.keys()]);
             }
 
             redirect_uri = params.get('redirect_uri') || params.get('redirectUri');
