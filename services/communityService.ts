@@ -1,23 +1,17 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export const createCommunity = async (community: any) => {
-    // RLSエラーを防ぐためにユーザーを明示的に検証
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    // クライアントサイドでの認証チェックを削除し、DBのRLSに任せる
+    // (Amplify環境でgetUserがタイムアウトする問題を回避するため)
+    console.log('Creating community with RLS protection:', community.ownerId);
 
-    if (authError || !user) {
-        console.error('CREATE COMMUNITY AUTH ERROR:', authError);
-        return { data: null, error: { message: 'ログイン有効期限が切れています。一度ログアウトして再ログインしてください。' } as any };
-    }
-
-    // オーナーIDが認証ユーザーと一致することを確認
-    const safeOwnerId = user.id;
-    console.log('Creating community for user:', safeOwnerId);
     const { data, error } = await supabase
         .from('communities' as any)
         .insert({
             name: community.name,
             description: community.description,
-            owner_id: safeOwnerId,
+            owner_id: community.ownerId,
             image_url: community.imageUrl,
             invite_code: community.inviteCode,
             is_secret: community.isSecret
@@ -27,9 +21,10 @@ export const createCommunity = async (community: any) => {
 
     if (!error && data) {
         // 作成者を自動的に参加させる
+        // ここもRLSが効くので安全
         await supabase.from('community_members' as any).insert({
             community_id: (data as any).id,
-            user_id: safeOwnerId
+            user_id: community.ownerId
         });
         // メンバー数を初期化
         await supabase.rpc('increment_member_count' as any, { c_id: (data as any).id });
