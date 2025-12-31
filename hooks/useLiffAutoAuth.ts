@@ -227,7 +227,8 @@ export const useLiffAutoAuth = (
                         if (otpError) {
                             setError(otpError.message);
                         } else {
-                            localStorage.setItem("linked_line_user_id", profile.userId);
+                            // Session established via OTP.
+                            // Do NOT store custom "linked_line_user_id". Rely on Supabase session.
                             onSessionRestored();
                         }
                     }

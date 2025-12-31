@@ -3,7 +3,8 @@ import { AuthChangeEvent, Session } from '@supabase/supabase-js';
 import { supabase, getProfile } from '../services/supabaseService';
 import { User } from '../types';
 import { useLiffAutoAuth } from './useLiffAutoAuth';
-import { useAutoSessionRestore } from './useAutoSessionRestore';
+import { useLiffAutoAuth } from './useLiffAutoAuth';
+import { logger } from '../lib/logger';
 import { logger } from '../lib/logger';
 
 interface AuthContextType {
@@ -117,7 +118,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         handleSessionRestored
     );
 
-    const { isRestoring: isAutoRestoring } = useAutoSessionRestore(!!session);
+    const { isRestoring: isLiffRestoring, isLiffProcessing } = useLiffAutoAuth(
+        !!session,
+        handleSessionRestored
+    );
 
     useEffect(() => {
         // Hydrate from local storage on mount
@@ -179,7 +183,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (user) await loadProfile(user.id);
     };
 
-    const effectiveIsAuthChecking = isAuthChecking || isLiffProcessing || ((isLiffRestoring || isAutoRestoring) && !session);
+    const effectiveIsAuthChecking = isAuthChecking || isLiffProcessing || (isLiffRestoring && !session);
 
     return (
         <AuthContext.Provider value={{
