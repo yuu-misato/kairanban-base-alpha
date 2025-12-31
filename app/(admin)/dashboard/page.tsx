@@ -26,6 +26,8 @@ import { Post, PostCategory, Coupon, Kairanban, VolunteerMission, Community, Com
 import { MUNICIPALITY_COORDINATES } from '@/constants';
 import { getPosts, createPost, createKairanbanWithNotification, registerLocalCoupon, createProfile, createMission, joinMission, addComment, toggleLike, getKairanbans, getCoupons, getMissions, getAllCommunities, getMyCommunities, createCommunity, getCommunityMembers, joinCommunity, getUserJoinedMissionIds, getUserReadKairanbanIds, markKairanbanAsRead, analyzeKairanban } from '@/services/supabaseService';
 
+import { supabase } from '@/integrations/supabase/client';
+
 function DashboardContent() {
     const {
         user,
@@ -37,6 +39,35 @@ function DashboardContent() {
 
     // Auth redirect handled by useEffect to prevent hydration mismatch
     const router = useRouter();
+
+    // [Server-Side Flow Support] Force Session Recovery from Hash
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const hash = window.location.hash;
+            if (hash && hash.includes('access_token')) {
+                console.log("Hash detected in Dashboard. Attempting manual session recovery...");
+                const params = new URLSearchParams(hash.replace('#', ''));
+                const accessToken = params.get('access_token');
+                const refreshToken = params.get('refresh_token');
+
+                if (accessToken && refreshToken) {
+                    supabase.auth.setSession({
+                        access_token: accessToken,
+                        refresh_token: refreshToken
+                    }).then(({ error }) => {
+                        if (!error) {
+                            console.log("Session recovered successfully from hash.");
+                            // Remove hash to clean URL
+                            window.history.replaceState(null, '', window.location.pathname);
+                            // Trigger user reload if needed (useAuth usually listens to state change)
+                        } else {
+                            console.error("Failed to recover session:", error);
+                        }
+                    });
+                }
+            }
+        }
+    }, []);
 
     useEffect(() => {
         if (!isAuthLoading && !user && typeof window !== 'undefined') {
