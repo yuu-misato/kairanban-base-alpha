@@ -342,7 +342,7 @@ function DashboardContent() {
 
     }, [selectedAreas, user, isAuthChecking]);
 
-    const { login: lineLogin } = useLineLogin();
+    // const { login: lineLogin } = useLineLogin();
 
     const addScore = (amount: number) => {
         setScore(prev => prev + amount);
