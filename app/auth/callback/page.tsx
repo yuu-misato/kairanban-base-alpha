@@ -38,6 +38,27 @@ const CallbackContent = () => {
         // 2. Handle Session (Return from Edge Function/Supabase)
         setStatus('セッションを確認中...');
 
+        // Manual Hash Parsing (Backup for detectSessionInUrl: false)
+        const hash = window.location.hash;
+        if (hash && hash.includes('access_token')) {
+            console.log("Hash detected, manually setting session...");
+            const params = new URLSearchParams(hash.replace('#', ''));
+            const accessToken = params.get('access_token');
+            const refreshToken = params.get('refresh_token');
+
+            if (accessToken && refreshToken) {
+                supabase.auth.setSession({
+                    access_token: accessToken,
+                    refresh_token: refreshToken
+                }).then(({ error }) => {
+                    if (!error) {
+                        setStatus('ログイン成功！(手動)');
+                        router.replace('/dashboard');
+                    }
+                });
+            }
+        }
+
         // Listener for Auth State Change (Reliable for Magic Links/Hash params)
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
             console.log("[AuthCallback] Auth Event:", event);
