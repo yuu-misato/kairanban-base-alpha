@@ -151,18 +151,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const logout = async () => {
         try {
+            console.log('Logging out...');
             await supabase.auth.signOut();
         } catch (e) {
-            console.error('Supabase signOut failed:', e);
+            console.error('Supabase signOut failed (ignoring):', e);
         } finally {
+            // NUCLEAR OPTION: Completely wipe everything
             if (typeof window !== 'undefined') {
+                // Clear all storage mechanisms
                 localStorage.clear();
-                localStorage.setItem('disable_auto_login', 'true');
-            }
-            setUser(null);
-            setSession(null);
-            if (typeof window !== 'undefined') {
+                sessionStorage.clear();
+
+                // Clear state immediately to give UI feedback (though reload will happen)
+                setUser(null);
+                setSession(null);
+
+                // Force a hard reload to clear memory and restart app from scratch
+                // This prevents any 'ghost' state from lingering in React context or closures
                 window.location.href = '/';
+                // Add tiny delay to ensure redirection happens before any auto-re-login logic runs
+                setTimeout(() => window.location.reload(), 100);
             }
         }
     };
