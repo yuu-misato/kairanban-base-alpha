@@ -495,6 +495,7 @@ function DashboardContent() {
 
 
     const renderContent = () => {
+        if (!user) return null; // Type Guard
         switch (activeTab) {
             case 'community':
                 if (selectedCommunity) {
