@@ -99,10 +99,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                     if (getStoredUser()) {
                         setUser(null);
                         localStorage.removeItem('saitama_user_profile_v2');
-                        // 強制リロードを実行し、不整合な状態を完全にリセットする
-                        if (typeof window !== 'undefined') {
-                            window.location.href = '/';
-                        }
+                        // Do not force redirect here. Let the consuming component decide.
+                        // window.location.href = '/'; 
                     }
                 }
             };
