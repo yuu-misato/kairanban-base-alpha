@@ -21,7 +21,6 @@ import AreaSelectModal from '@/components/AreaSelectModal';
 import SystemDiagnostics from '@/components/SystemDiagnostics';
 
 import { useAuth } from '@/hooks/useAuth';
-import { useLineLogin } from '@/hooks/useLineLogin';
 
 import { Post, PostCategory, Coupon, Kairanban, VolunteerMission, Community, CommunityMember } from '@/types';
 import { MUNICIPALITY_COORDINATES } from '@/constants';
