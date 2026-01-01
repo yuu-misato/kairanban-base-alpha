@@ -37,14 +37,14 @@ export const createProfile = async (user: any) => {
             .single();
 
         if (error) {
-            console.error('プロファイルのDB保存に失敗しました (RLSまたは制約エラー):', error);
+            console.error('プロファイルのDB保存に失敗しました (RLSまたは制約エラー):', JSON.stringify(error, null, 2));
         } else {
             console.log('プロファイルが正常に保存されました:', data);
         }
         return { data, error };
 
     } catch (err: any) {
-        console.error('重大なエラー: プロファイル保存失敗またはタイムアウト:', err);
+        console.error('重大なエラー: プロファイル保存失敗またはタイムアウト:', err, JSON.stringify(err, null, 2));
         // UIにエラーを返すためにダミーのエラーオブジェクトを返す
         return { data: null, error: { message: err.message || '接続タイムアウト' } };
     }

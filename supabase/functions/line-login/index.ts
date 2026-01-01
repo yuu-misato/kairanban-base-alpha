@@ -33,7 +33,7 @@ serve(async (req) => {
         const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
         // Unified Input Parsing (GET vs POST)
-        let action, code, redirect_uri, line_user_id, display_name, picture_url, email, nickname;
+        let action, code, redirect_uri, dashboard_url, line_user_id, display_name, picture_url, email, nickname;
 
         const reqUrl = new URL(req.url);
 
@@ -67,7 +67,7 @@ serve(async (req) => {
             action = body.action;
             code = body.code;
             redirect_uri = body.redirect_uri || body.redirectUri;
-            const dashboard_url = body.dashboard_url; // New parameter
+            dashboard_url = body.dashboard_url; // New parameter
             line_user_id = body.line_user_id;
             display_name = body.display_name;
             picture_url = body.picture_url;

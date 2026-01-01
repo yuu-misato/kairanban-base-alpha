@@ -47,9 +47,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     // Helper to load profile
     const loadProfile = useCallback(async (userId: string) => {
+        console.log('[useAuth] Loading profile for user:', userId);
         try {
             const profilePromise = getProfile(userId);
-            const { data } = await profilePromise;
+            const { data, error } = await profilePromise;
+
+            console.log('[useAuth] Profile fetched:', data);
+            if (error) console.error('[useAuth] Profile fetch error:', error);
 
             // Cast data to any for now to bypass strict union type checks from Supabase generated types
             // in a real scenario, we should use the Database['public']['Tables']['profiles']['Row'] type

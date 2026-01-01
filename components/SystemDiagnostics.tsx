@@ -8,7 +8,7 @@ const DIAG_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsI
 const SystemDiagnostics: React.FC = () => {
     const [results, setResults] = useState<any>({});
     const [status, setStatus] = useState<'idle' | 'running' | 'done'>('idle');
-    const [isOpen, setIsOpen] = useState(true);
+    const [isOpen, setIsOpen] = useState(false);
 
     const runDiagnostics = async () => {
         setStatus('running');

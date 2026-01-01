@@ -119,8 +119,29 @@ export const sendLineBroadcast = async (message: string, targetRole: string = 'a
 };
 
 export const getAdminData = async (type: 'users' | 'missions' | 'communities' | 'points') => {
-    const { data, error } = await supabase.functions.invoke(`admin-data?type=${type}`, {
-        method: 'GET'
-    });
-    return { data, error };
+    // Edge Functionではなく直接クライアントから取得する（デプロイ問題を回避）
+    try {
+        let query;
+        switch (type) {
+            case 'users':
+                query = supabase.from('profiles').select('*').order('created_at', { ascending: false });
+                break;
+            case 'missions':
+                query = supabase.from('volunteer_missions').select('*').order('created_at', { ascending: false });
+                break;
+            case 'communities':
+                query = supabase.from('communities').select('*').order('created_at', { ascending: false });
+                break;
+            case 'points':
+                query = supabase.from('action_point_history').select('*, profiles(nickname, id)').order('created_at', { ascending: false });
+                break;
+            default:
+                return { data: null, error: new Error('Invalid type') };
+        }
+
+        const { data, error } = await query;
+        return { data, error };
+    } catch (err: any) {
+        return { data: null, error: err };
+    }
 };

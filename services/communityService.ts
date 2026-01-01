@@ -123,3 +123,27 @@ export const transferCommunityOwnership = async (communityId: string, newOwnerId
     });
     return { error };
 };
+
+export const updateCommunity = async (id: string, updates: any) => {
+    const payload: any = {};
+    if (updates.name) payload.name = updates.name;
+    if (updates.description) payload.description = updates.description;
+    if (updates.isSecret !== undefined) payload.is_secret = updates.isSecret;
+    if (updates.imageUrl) payload.image_url = updates.imageUrl;
+
+    const { data, error } = await supabase
+        .from('communities' as any)
+        .update(payload)
+        .eq('id', id)
+        .select()
+        .single();
+    return { data, error };
+};
+
+export const deleteCommunity = async (id: string) => {
+    const { error } = await supabase
+        .from('communities' as any)
+        .delete()
+        .eq('id', id);
+    return { error };
+};

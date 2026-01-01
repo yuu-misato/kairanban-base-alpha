@@ -90,31 +90,31 @@ const PostCard: React.FC<PostCardProps & { currentUser?: { id: string, avatar: s
           </div>
         )}
 
-        {/* Actions */}
-        <div className="flex items-center gap-6 pt-4 border-t border-slate-50">
+        {/* Actions - Enhanced Touch Targets */}
+        <div className="flex items-center justify-between pt-2 mt-4 border-t border-slate-50">
           <button
             onClick={handleLike}
-            className="flex items-center gap-2 text-slate-400 hover:text-pink-500 transition-colors group"
+            className="flex-1 flex items-center justify-center gap-2 py-3 md:py-2 rounded-xl active:bg-slate-50 transition-all group"
           >
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center group-hover:bg-pink-50 transition-colors ${isLikeAnimating ? 'animate-ping' : ''}`}>
-              <i className={`${post.isLiked ? 'fas fa-heart text-pink-500' : 'far fa-heart'} ${isLikeAnimating ? 'text-pink-500 font-bold' : ''}`}></i>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${isLikeAnimating ? 'bg-pink-50' : 'group-hover:bg-pink-50'}`}>
+              <i className={`${post.isLiked ? 'fas fa-heart text-pink-500' : 'far fa-heart'} text-lg ${isLikeAnimating ? 'animate-ping text-pink-500' : 'text-slate-400 group-hover:text-pink-500'}`}></i>
             </div>
-            <span className={`text-xs font-black transition-transform ${isLikeAnimating || post.isLiked ? 'scale-125 text-pink-500' : ''}`}>{post.likes}</span>
+            <span className={`text-xs font-black transition-transform ${isLikeAnimating || post.isLiked ? 'scale-110 text-pink-500' : 'text-slate-500'}`}>{post.likes}</span>
           </button>
 
           <button
             onClick={() => setIsCommentsOpen(!isCommentsOpen)}
-            className={`flex items-center gap-2 transition-colors group ${isCommentsOpen ? 'text-emerald-600' : 'text-slate-400 hover:text-emerald-600'}`}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 md:py-2 rounded-xl active:bg-slate-50 transition-all group ${isCommentsOpen ? 'bg-slate-50/80' : ''}`}
           >
             <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${isCommentsOpen ? 'bg-emerald-50' : 'group-hover:bg-emerald-50'}`}>
-              <i className="far fa-comment-dots"></i>
+              <i className={`far fa-comment-dots text-lg ${isCommentsOpen ? 'text-emerald-500' : 'text-slate-400 group-hover:text-emerald-500'}`}></i>
             </div>
-            <span className="text-xs font-black">{localComments.length}</span>
+            <span className={`text-xs font-black ${isCommentsOpen ? 'text-emerald-600' : 'text-slate-500'}`}>{localComments.length}</span>
           </button>
 
-          <button className="flex items-center gap-2 text-slate-400 hover:text-indigo-600 ml-auto transition-colors group">
+          <button className="flex-1 flex items-center justify-center gap-2 py-3 md:py-2 rounded-xl active:bg-slate-50 transition-all group">
             <div className="w-8 h-8 rounded-full flex items-center justify-center group-hover:bg-indigo-50 transition-colors">
-              <i className="far fa-share-square"></i>
+              <i className="far fa-share-square text-lg text-slate-400 group-hover:text-indigo-600"></i>
             </div>
           </button>
         </div>

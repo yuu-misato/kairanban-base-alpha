@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Community, User, CommunityMember } from '../types';
-import { getCommunityMembers, updateMemberRole, transferCommunityOwnership } from '../services/supabaseService';
+import { getCommunityMembers, updateMemberRole, transferCommunityOwnership, updateCommunity, deleteCommunity } from '../services/supabaseService';
 
 interface CommunitySettingsModalProps {
     community: Community;
@@ -13,6 +13,39 @@ interface CommunitySettingsModalProps {
 const CommunitySettingsModal: React.FC<CommunitySettingsModalProps> = ({ community, currentUser, isOpen, onClose, onAddToast }) => {
     const [members, setMembers] = useState<CommunityMember[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editForm, setEditForm] = useState({ name: community.name, description: community.description, isSecret: community.isSecret });
+
+    const handleUpdateCommunity = async () => {
+        if (!editForm.name) return;
+        setIsLoading(true);
+        const { error } = await updateCommunity(community.id, editForm);
+        if (error) {
+            onAddToast('更新に失敗しました', 'error');
+            console.error(error);
+        } else {
+            onAddToast('更新しました', 'success');
+            setIsEditing(false);
+            window.location.reload();
+        }
+        setIsLoading(false);
+    };
+
+    const handleDeleteCommunity = async () => {
+        if (!window.confirm('本当に削除しますか？この操作は取り消せません。\nメンバーがいる場合は削除できない可能性があります。')) return;
+
+        setIsLoading(true);
+        const { error } = await deleteCommunity(community.id);
+        if (error) {
+            onAddToast('削除に失敗しました', 'error');
+            console.error(error);
+        } else {
+            onAddToast('削除しました', 'success');
+            onClose();
+            window.location.reload();
+        }
+        setIsLoading(false);
+    };
 
     const fetchMembers = async () => {
         setIsLoading(true);
@@ -83,15 +116,67 @@ const CommunitySettingsModal: React.FC<CommunitySettingsModalProps> = ({ communi
 
                 <div className="flex-1 overflow-y-auto space-y-6 pr-2">
                     {/* Basic Info */}
-                    <div className="space-y-2">
-                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">コミュニティ名</label>
-                        <div className="text-xl font-black text-slate-800">{community.name}</div>
-                        <div className="text-sm text-slate-500 font-bold">{community.description}</div>
-                        <div className="flex gap-2 mt-2">
-                            <span className="px-3 py-1 bg-slate-100 rounded-lg text-xs font-bold text-slate-500">ID: {community.id}</span>
-                            <span className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-lg text-xs font-bold">招待コード: {community.inviteCode}</span>
-                            {community.isSecret && <span className="px-3 py-1 bg-rose-50 text-rose-600 rounded-lg text-xs font-bold"><i className="fas fa-lock mr-1"></i>非公開</span>}
-                        </div>
+                    {/* Basic Info */}
+                    <div className="space-y-4">
+                        {isEditing ? (
+                            <div className="space-y-4 p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                                <div>
+                                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">コミュニティ名</label>
+                                    <input
+                                        type="text"
+                                        value={editForm.name}
+                                        onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                                        className="w-full px-4 py-2 rounded-xl font-bold text-slate-800 border-2 border-slate-200 focus:border-indigo-500 outline-none"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">説明</label>
+                                    <textarea
+                                        value={editForm.description}
+                                        onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                                        className="w-full px-4 py-2 rounded-xl font-bold text-slate-800 border-2 border-slate-200 focus:border-indigo-500 outline-none min-h-[80px]"
+                                    />
+                                </div>
+                                <div className="flex items-center gap-2 cursor-pointer" onClick={() => setEditForm({ ...editForm, isSecret: !editForm.isSecret })}>
+                                    <div className={`w-8 h-5 rounded-full relative transition-colors ${editForm.isSecret ? 'bg-emerald-500' : 'bg-slate-300'}`}>
+                                        <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-transform ${editForm.isSecret ? 'left-4' : 'left-1'}`}></div>
+                                    </div>
+                                    <span className="text-xs font-bold text-slate-500">非公開にする</span>
+                                </div>
+                                <div className="flex gap-2 pt-2">
+                                    <button onClick={handleUpdateCommunity} className="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-black shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all text-sm">
+                                        保存する
+                                    </button>
+                                    <button onClick={() => setIsEditing(false)} className="flex-1 py-3 bg-slate-200 text-slate-500 rounded-xl font-black hover:bg-slate-300 transition-all text-sm">
+                                        キャンセル
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="space-y-2">
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">コミュニティ名</label>
+                                        <div className="text-xl font-black text-slate-800">{community.name}</div>
+                                    </div>
+                                    {isAdmin && (
+                                        <button onClick={() => setIsEditing(true)} className="w-8 h-8 rounded-full bg-slate-50 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 flex items-center justify-center transition-colors">
+                                            <i className="fas fa-edit"></i>
+                                        </button>
+                                    )}
+                                </div>
+                                <div className="text-sm text-slate-500 font-bold whitespace-pre-wrap">{community.description}</div>
+                                <div className="flex gap-2 mt-2 flex-wrap">
+                                    <span className="px-3 py-1 bg-slate-100 rounded-lg text-xs font-bold text-slate-500" title={community.id}>
+                                        ID: ••••{community.id.slice(-4)}
+                                    </span>
+                                    <span className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-lg text-xs font-bold select-all">
+                                        招待コード: {community.inviteCode}
+                                    </span>
+                                    {community.isSecret && <span className="px-3 py-1 bg-rose-50 text-rose-600 rounded-lg text-xs font-bold"><i className="fas fa-lock mr-1"></i>非公開</span>}
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     <div className="border-t border-slate-100 my-4"></div>
@@ -144,6 +229,21 @@ const CommunitySettingsModal: React.FC<CommunitySettingsModalProps> = ({ communi
                             </div>
                         )}
                     </div>
+
+                    {isAdmin && !isEditing && (
+                        <div className="mt-8 pt-6 border-t border-slate-100 mb-4">
+                            <h4 className="font-black text-sm text-slate-400 mb-4">危険な操作</h4>
+                            <button
+                                onClick={handleDeleteCommunity}
+                                className="w-full py-4 bg-rose-50 border-2 border-rose-100 text-rose-600 rounded-xl font-bold hover:bg-rose-100 transition-colors flex items-center justify-center gap-2"
+                            >
+                                <i className="fas fa-trash-alt"></i> コミュニティを削除する
+                            </button>
+                            <p className="text-[10px] text-slate-400 font-bold mt-2 text-center">
+                                ※削除すると復元できません。全てのデータが失われます。
+                            </p>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

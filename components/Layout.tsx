@@ -148,49 +148,57 @@ const Layout: React.FC<LayoutProps> = ({
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 md:ml-72 pb-16 md:pb-0">
-        <header className="sticky top-0 z-20 bg-white/90 backdrop-blur-xl border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+      {/* Main Content with Safe Area Padding */}
+      <main className="flex-1 md:ml-72 pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
+        <header className="sticky top-0 z-20 bg-white/90 backdrop-blur-xl border-b border-slate-200 px-4 md:px-6 py-3 md:py-4 flex items-center justify-between shadow-sm">
           <div>
             <h2 className="text-lg font-black text-slate-800 tracking-tight">
               {activeTab === 'profile' ? '設定' : (menuItems.find(i => i.id === activeTab)?.label || 'ホーム')}
             </h2>
             <div className="flex gap-1 mt-0.5">
               {selectedAreas.slice(0, 1).map(area => (
-                <span key={area} className="text-[10px] text-emerald-600 font-bold">{area}中心</span>
+                <span key={area} className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-full">{area}中心</span>
               ))}
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <div className="bg-slate-100 px-3 py-1.5 rounded-full flex items-center gap-2">
-              <i className="fas fa-coins text-amber-500 text-xs"></i>
-              <span className="text-xs font-bold text-slate-700">{score}</span>
+            <div className="bg-slate-100 px-3 py-1.5 rounded-full flex items-center gap-2 border border-slate-200">
+              <i className="fas fa-coins text-amber-500 text-xs shadow-sm"></i>
+              <span className="text-xs font-black text-slate-700">{score}</span>
             </div>
             <button
               onClick={() => setActiveTab('profile')}
-              className="md:hidden w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-slate-100 transition-colors"
+              className="md:hidden w-9 h-9 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:bg-slate-50 transition-colors shadow-sm active:scale-95"
             >
-              <i className="fas fa-cog"></i>
+              <i className="fas fa-cog text-sm"></i>
             </button>
           </div>
         </header>
-        <div className="max-w-4xl mx-auto p-3 md:p-8">
+        <div className="max-w-4xl mx-auto p-4 md:p-8">
           {children}
         </div>
       </main>
 
-      {/* Mobile Bottom Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-slate-200 flex justify-around items-center h-16 z-50">
-        {menuItems.slice(0, 4).map((item) => (
-          <button
-            key={item.id}
-            onClick={() => setActiveTab(item.id)}
-            className={`flex flex-col items-center justify-center py-2 flex-1 transition-all ${activeTab === item.id ? 'text-emerald-600' : 'text-slate-400'
-              }`}
-          >
-            <i className={`fas ${item.icon} text-lg`}></i>
-            <span className="text-[9px] mt-1 font-black">{item.label}</span>
-          </button>
-        ))}
+      {/* Mobile Bottom Navigation - World Class UI */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-3xl border-t border-slate-200/60 pb-[env(safe-area-inset-bottom)] z-50 shadow-[0_-5px_20px_-10px_rgba(0,0,0,0.1)]">
+        <div className="flex justify-around items-stretch h-[3.5rem] px-2 overflow-x-auto no-scrollbar">
+          {menuItems.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => setActiveTab(item.id)}
+              className={`flex-1 flex flex-col items-center justify-center min-w-[4.5rem] transition-all relative group active:scale-95 ${activeTab === item.id ? 'text-emerald-600' : 'text-slate-400 hover:text-slate-600'
+                }`}
+            >
+              {activeTab === item.id && (
+                <div className="absolute top-0 w-8 h-1 bg-emerald-500 rounded-b-full shadow-[0_0_10px_rgba(16,185,129,0.5)] transition-all animate-in fade-in zoom-in duration-300"></div>
+              )}
+              <div className={`text-lg transition-transform duration-300 ${activeTab === item.id ? '-translate-y-1 scale-110 drop-shadow-sm' : ''}`}>
+                <i className={`fas ${item.icon}`}></i>
+              </div>
+              <span className={`text-[9px] font-black tracking-tight transition-opacity duration-300 ${activeTab === item.id ? 'opacity-100' : 'opacity-70'}`}>{item.label}</span>
+            </button>
+          ))}
+        </div>
       </nav>
     </div>
   );

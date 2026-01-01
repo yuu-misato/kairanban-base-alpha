@@ -52,6 +52,10 @@ export async function GET(request: NextRequest) {
 
         const data = await response.json();
 
+        if (data.error) {
+            throw new Error(`Edge Function Error: ${data.error}`);
+        }
+
         if (data.action_link) {
             console.log('[Auth Callback API] Received action_link. Redirecting...');
             // Redirect to Supabase Verify URL -> Then to Dashboard

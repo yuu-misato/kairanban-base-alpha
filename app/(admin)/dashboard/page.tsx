@@ -59,7 +59,8 @@ function DashboardContent() {
                             console.log("Session recovered successfully from hash.");
                             // Remove hash to clean URL
                             window.history.replaceState(null, '', window.location.pathname);
-                            // Trigger user reload if needed (useAuth usually listens to state change)
+                            // Force reload to ensure authentication state is picked up
+                            window.location.reload();
                         } else {
                             console.error("Failed to recover session:", error);
                         }
@@ -80,11 +81,11 @@ function DashboardContent() {
     // Redirect to onboarding if profile is incomplete
     useEffect(() => {
         if (user && !isAuthLoading) {
-            if (user.nickname === '名無し' || !user.selectedAreas || user.selectedAreas.length === 0) {
-                // Prevent redirect loop if data is just slow to load?
-                // Assuming user object is reliable here.
-                router.replace('/onboarding');
-            }
+            // Temporarily disabled to fixes loop issue reported by user
+            console.log("[Dashboard] Profile check disabled. User:", user.nickname, user.selectedAreas);
+            // if (user.nickname === '名無し' || !user.selectedAreas || user.selectedAreas.length === 0) {
+            //     router.replace('/onboarding');
+            // }
         }
     }, [user, isAuthLoading, router]);
 
@@ -110,6 +111,8 @@ function DashboardContent() {
 
 
     const [isLoading, setIsLoading] = useState(false);
+    const [isKairanbanLoading, setIsKairanbanLoading] = useState(true);
+    const [isPostsLoading, setIsPostsLoading] = useState(true);
     const [posts, setPosts] = useState<Post[]>([]);
     const [kairanbans, setKairanbans] = useState<Kairanban[]>([]);
     const [missions, setMissions] = useState<VolunteerMission[]>([]);
@@ -315,24 +318,33 @@ function DashboardContent() {
         if (!user || isAuthChecking) return;
 
         setIsLoading(true);
-        const promises = [
-            getPosts(selectedAreas, user.id),
-            getKairanbans(),
-            getCoupons(),
-            getMissions(), // missionsRes
-            getMyCommunities(user.id), // myCommunitiesRes
-            getUserJoinedMissionIds(user.id), // userJoinedMissionIdsRes
-            getUserReadKairanbanIds(user.id) // userReadKairanbanIdsRes
-        ];
+        setIsKairanbanLoading(true);
+        setIsPostsLoading(true);
 
-        Promise.all(promises).then(([postsRes, kairanRes, couponsRes, missionsRes, myCommunitiesRes, userJoinedMissionIdsRes, userReadKairanbanIdsRes]) => {
-            if (postsRes.data) {
-                // Mapping handled in service for complex objects, but double check format
-                setPosts(postsRes.data as Post[]);
-            }
-            if (kairanRes.data) {
-                // Map Kairanban
-                const mappedKairan: Kairanban[] = kairanRes.data.map((k: any) => ({
+        // 1. Fetch Posts (Independent)
+        const postsPromise = getPosts(selectedAreas, user.id)
+            .then(({ data }) => {
+                if (data) setPosts(data as Post[]);
+            })
+            .catch(err => console.error(err))
+            .finally(() => setIsPostsLoading(false));
+
+        // 2. Fetch Kairanban & Missions (Chokai Panel)
+        const kairanAndMissionsPromise = Promise.all([
+            getKairanbans(),
+            getMissions(),
+            getUserReadKairanbanIds(user.id),
+            getUserJoinedMissionIds(user.id),
+            getMyCommunities(user.id) // Used for Kairanban community name resolution
+        ]).then(([kRes, mRes, rRes, jRes, cRes]) => {
+            // Set User Data first
+            if (rRes.data) setReadKairanbanIds(new Set(rRes.data));
+            if (jRes.data) setJoinedMissionIds(new Set(jRes.data));
+            if (cRes.data) setMyCommunities(cRes.data as Community[]); // Also needed globally
+
+            // Map Kairanban
+            if (kRes.data) {
+                const mappedKairan: Kairanban[] = kRes.data.map((k: any) => ({
                     id: k.id,
                     title: k.title,
                     content: k.content,
@@ -340,7 +352,7 @@ function DashboardContent() {
                     author: k.author,
                     points: k.points || 0,
                     readCount: k.read_count || 0,
-                    isRead: userReadKairanbanIdsRes?.data ? new Set(userReadKairanbanIdsRes.data).has(k.id) : false,
+                    isRead: rRes.data ? new Set(rRes.data).has(k.id) : false,
                     sentToLine: k.sent_to_line || false,
                     createdAt: k.created_at,
                     category: 'notice',
@@ -348,8 +360,32 @@ function DashboardContent() {
                 }));
                 setKairanbans(mappedKairan);
             }
-            if (couponsRes.data) {
-                const mappedCoupons: Coupon[] = couponsRes.data.map((c: any) => ({
+
+            // Map Missions
+            if (mRes.data) {
+                const mappedMissions: VolunteerMission[] = mRes.data.map((m: any) => ({
+                    id: m.id,
+                    title: m.title,
+                    description: m.description,
+                    points: m.points,
+                    area: m.area,
+                    date: m.date,
+                    currentParticipants: m.current_participants || 0,
+                    maxParticipants: m.max_participants || 10
+                }));
+                setMissions(mappedMissions);
+            }
+        }).catch(err => {
+            console.error(err);
+            addToast('データの読み込みに失敗しました', 'error');
+        }).finally(() => {
+            setIsKairanbanLoading(false);
+        });
+
+        // 3. Fetch Coupons (Independent)
+        const couponsPromise = getCoupons().then(({ data }) => {
+            if (data) {
+                const mappedCoupons: Coupon[] = data.map((c: any) => ({
                     id: c.id,
                     shopName: c.shop_name,
                     title: c.title,
@@ -363,35 +399,18 @@ function DashboardContent() {
                 }));
                 setCoupons(mappedCoupons);
             }
-            if (missionsRes.data) {
-                const mappedMissions: VolunteerMission[] = missionsRes.data.map((m: any) => ({
-                    id: m.id,
-                    title: m.title,
-                    description: m.description,
-                    points: m.points,
-                    area: m.area,
-                    date: m.date,
-                    currentParticipants: m.current_participants || 0,
-                    maxParticipants: m.max_participants || 10
-                }));
-                setMissions(mappedMissions);
-            }
-            if (myCommunitiesRes?.data) {
-                setMyCommunities(myCommunitiesRes.data as Community[]);
-            }
-            if (userJoinedMissionIdsRes?.data) {
-                setJoinedMissionIds(new Set(userJoinedMissionIdsRes.data));
-            }
-            if (userReadKairanbanIdsRes?.data) {
-                setReadKairanbanIds(new Set(userReadKairanbanIdsRes.data));
-            }
-        }).finally(() => {
-            setIsLoading(false);
-        }).catch(err => {
-            console.error(err);
-            addToast('データの読み込みに失敗しました', 'error');
+        }).catch(err => console.error(err));
+
+        // Wait for all to finish before turning off global loading
+        Promise.all([postsPromise, kairanAndMissionsPromise, couponsPromise]).finally(() => {
             setIsLoading(false);
         });
+
+        // It is better to rely on local states for UI parts.
+        // Global isLoading can be turned off immediately or after criticals.
+        // For now, let's just turn it off when Chokai is done (since it's default tab) OR wait for all.
+        // But since we split them, we don't have a single "All Done".
+        // Let's just use local states for the UI rendering.
 
     }, [selectedAreas, user, isAuthChecking]);
 
@@ -422,17 +441,16 @@ function DashboardContent() {
     };
 
     const handleAreaAdd = async (newArea: string) => {
-        if (newArea && !selectedAreas.includes(newArea)) {
-            const newAreas = [...selectedAreas, newArea];
+        if (newArea) {
+            // Overwrite existing selection (Single Area Policy)
+            const newAreas = [newArea];
             setSelectedAreas(newAreas);
             if (user) {
                 const updatedUser = { ...user, selectedAreas: newAreas };
                 await createProfile(updatedUser);
                 setUser(updatedUser);
-                addToast(`${newArea}を追加しました`, 'success');
+                addToast(`エリアを${newArea}に変更しました`, 'success');
             }
-        } else {
-            addToast('そのエリアは既に追加されています', 'info');
         }
     };
 
@@ -728,7 +746,15 @@ function DashboardContent() {
                             </div>
                         )}
 
-                        {/* Posting Trigger */}
+                        {/* Mobile Posting FAB */}
+                        <button
+                            onClick={() => setIsPosting(true)}
+                            className="md:hidden fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] right-4 w-14 h-14 bg-indigo-600 rounded-full text-white shadow-2xl shadow-indigo-500/40 flex items-center justify-center z-40 active:scale-95 transition-all hover:bg-indigo-700 animate-in zoom-in duration-300"
+                        >
+                            <i className="fas fa-pen-fancy text-xl"></i>
+                        </button>
+
+                        {/* Posting Trigger (Desktop/Inline) */}
                         {!isPosting && (
                             <div className="bg-white p-4 rounded-3xl shadow-sm border border-slate-100 flex items-center gap-4 mb-6 cursor-pointer hover:bg-slate-50 transition-colors" onClick={() => setIsPosting(true)}>
                                 <img src={user.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=guest'} className="w-10 h-10 rounded-full border border-slate-200" alt="avatar" />
@@ -791,7 +817,7 @@ function DashboardContent() {
 
                         {/* Post Feed */}
                         <div className="space-y-4">
-                            {isLoading ? <PostSkeleton /> : (
+                            {isPostsLoading ? <PostSkeleton /> : (
                                 posts.length === 0 ? (
                                     <EmptyState title="まだ投稿がありません" description="この地域の最初の投稿を作成してみましょう！" />
                                 ) : (
@@ -857,6 +883,7 @@ function DashboardContent() {
                             onOpenCreateMission={() => setIsCreatingMission(true)}
                             myCommunities={myCommunities}
                             joinedMissionIds={joinedMissionIds}
+                            isLoading={isKairanbanLoading}
                         />
                     </>
                 );
@@ -894,20 +921,14 @@ function DashboardContent() {
                         <div className="flex items-center justify-between mb-6">
                             <h3 className="text-xl font-black text-slate-800">マイエリア設定</h3>
                             <button onClick={() => setIsAreaModalOpen(true)} className="bg-slate-800 text-white text-xs font-bold px-4 py-2 rounded-full hover:bg-slate-700 transition flex items-center gap-2">
-                                <i className="fas fa-plus"></i> エリア追加
+                                <i className={`fas ${selectedAreas.length > 0 ? 'fa-pen' : 'fa-plus'}`}></i> {selectedAreas.length > 0 ? 'エリア変更' : 'エリア追加'}
                             </button>
                         </div>
                         <div className="flex flex-wrap gap-2 mb-6">
                             {selectedAreas.map(area => (
-                                <span key={area} className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-700 font-bold rounded-full text-sm">
+                                <span key={area} className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-50 text-emerald-700 font-bold rounded-2xl text-sm border border-emerald-100">
+                                    <i className="fas fa-map-marker-alt"></i>
                                     {area}
-                                    <button onClick={async () => {
-                                        const newAreas = selectedAreas.filter(a => a !== area);
-                                        setSelectedAreas(newAreas);
-                                        const updated = { ...user, selectedAreas: newAreas };
-                                        await createProfile(updated);
-                                        setUser(updated);
-                                    }} className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center hover:bg-emerald-200"><i className="fas fa-times text-xs"></i></button>
                                 </span>
                             ))}
                         </div>
@@ -1039,7 +1060,7 @@ function DashboardContent() {
             )}
             <DebugPanel />
             <AreaSelectModal isOpen={isAreaModalOpen} onClose={() => setIsAreaModalOpen(false)} onAdd={handleAreaAdd} />
-            <SystemDiagnostics />
+            {/* <SystemDiagnostics /> */}
         </Layout>
     );
 }

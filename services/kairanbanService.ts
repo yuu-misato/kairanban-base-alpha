@@ -10,6 +10,19 @@ export const getKairanbans = async () => {
 
 export const createKairanbanWithNotification = async (kairan: any) => {
     // 1. 回覧板データを挿入
+    // ポイント設定を取得
+    let points = 5;
+    const { data: setting } = await supabase
+        .from('action_point_settings' as any)
+        .select('points_amount, is_active')
+        .eq('action_key', 'read_kairanban')
+        .single();
+
+    if (setting && setting.is_active) {
+        points = setting.points_amount;
+    }
+
+    // 1. 回覧板データを挿入
     const { data, error } = await supabase
         .from('kairanbans' as any)
         .insert([{
@@ -18,7 +31,8 @@ export const createKairanbanWithNotification = async (kairan: any) => {
             area: kairan.area,
             author: kairan.author,
             sent_to_line: kairan.sent_to_line,
-            community_id: kairan.communityId || null
+            community_id: kairan.communityId || null,
+            points: points
         }])
         .select();
 

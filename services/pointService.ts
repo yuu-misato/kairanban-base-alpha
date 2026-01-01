@@ -53,6 +53,34 @@ export const getActionPointSettings = async () => {
         .from('action_point_settings')
         .select('*')
         .order('display_order', { ascending: true });
+
+    // Ensure 'read_kairanban' setting exists (Auto-seed for existing environments)
+    if (!error && data) {
+        const hasKairanban = data.some((s: any) => s.action_key === 'read_kairanban');
+        if (!hasKairanban) {
+            console.log("Seeding missing read_kairanban setting...");
+            const { error: seedError } = await supabase
+                .from('action_point_settings')
+                .insert({
+                    action_key: 'read_kairanban',
+                    action_name: '回覧板確認',
+                    description: 'デジタル回覧板を確認した際に付与されるポイント',
+                    points_amount: 5,
+                    is_active: true,
+                    display_order: 20
+                });
+
+            if (!seedError) {
+                // Re-fetch
+                const { data: newData, error: newError } = await supabase
+                    .from('action_point_settings')
+                    .select('*')
+                    .order('display_order', { ascending: true });
+                return { data: newData, error: newError };
+            }
+        }
+    }
+
     return { data, error };
 };
 
